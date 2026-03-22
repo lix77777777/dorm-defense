@@ -7,30 +7,30 @@ export const ROAD_INNER_WIDTH = 18;
 export const difficulties = {
   easy: {
     label: "简单",
-    startGold: 280,
-    startLives: 9,
-    enemyHpMul: 1.0,
-    enemySpeedMul: 1.0,
+    startGold: 270,
+    startLives: 8,
+    enemyHpMul: 1.02,
+    enemySpeedMul: 1.02,
     rewardMul: 1.0,
-    desc: "简单：仍然需要认真放塔，但容错更高。"
+    desc: "简单：也需要认真放塔，但容错更高。"
   },
   normal: {
     label: "普通",
-    startGold: 220,
-    startLives: 7,
-    enemyHpMul: 1.12,
-    enemySpeedMul: 1.08,
+    startGold: 210,
+    startLives: 6,
+    enemyHpMul: 1.16,
+    enemySpeedMul: 1.10,
     rewardMul: 0.98,
-    desc: "普通：难度比之前更高，前期资源更紧。"
+    desc: "普通：资源更紧，敌人更硬更快。"
   },
   hard: {
     label: "困难",
-    startGold: 180,
-    startLives: 5,
-    enemyHpMul: 1.25,
-    enemySpeedMul: 1.14,
+    startGold: 170,
+    startLives: 4,
+    enemyHpMul: 1.30,
+    enemySpeedMul: 1.16,
     rewardMul: 0.95,
-    desc: "困难：敌人更快更硬，站位和升级节奏都要更精准。"
+    desc: "困难：站位、升级和技能时机都要更精准。"
   }
 };
 
@@ -49,7 +49,7 @@ export const maps = {
       { x: 900, y: 180 }
     ],
     spots: [
-      { x: 105, y: 45 },
+      { x: 100, y: 45 },
       { x: 105, y: 175 },
       { x: 255, y: 165 },
       { x: 290, y: 320 },
@@ -64,7 +64,7 @@ export const maps = {
 
   library: {
     label: "图书馆",
-    desc: "图书馆：路线更长，后半段更适合放置高伤害塔。",
+    desc: "图书馆：路线更长，后半段更适合高伤害塔。",
     path: [
       { x: 0, y: 80 },
       { x: 230, y: 80 },
@@ -93,7 +93,7 @@ export const maps = {
 
   lab: {
     label: "实验楼",
-    desc: "实验楼：转角多，减速塔和范围覆盖更重要。",
+    desc: "实验楼：转角多，减速塔和交叉火力更重要。",
     path: [
       { x: 0, y: 260 },
       { x: 180, y: 260 },
@@ -112,9 +112,9 @@ export const maps = {
       { x: 280, y: 160 },
       { x: 280, y: 360 },
       { x: 455, y: 185 },
-      { x: 455, y: 510 },
+      { x: 455, y: 505 },
       { x: 650, y: 350 },
-      { x: 650, y: 85 },
+      { x: 650, y: 90 },
       { x: 835, y: 220 },
       { x: 835, y: 395 }
     ]
@@ -211,6 +211,15 @@ export const enemyTypes = {
     color: "#111827",
     radius: 18,
     label: "精"
+  },
+  boss: {
+    name: "院长怪",
+    hp: 430,
+    speed: 56,
+    reward: 120,
+    color: "#7c2d12",
+    radius: 24,
+    label: "王"
   }
 };
 
@@ -222,5 +231,5 @@ export const waves = [
   ["tank", "fast", "tank", "rush", "elite", "fast", "tank"],
   ["tank", "elite", "fast", "rush", "tank", "fast", "normal", "rush"],
   ["elite", "tank", "rush", "fast", "elite", "normal", "fast", "tank"],
-  ["elite", "tank", "elite", "rush", "fast", "tank", "rush", "fast", "elite"]
+  ["elite", "tank", "boss", "rush", "fast", "tank", "elite"]
 ];
