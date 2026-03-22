@@ -92,31 +92,32 @@ export const maps = {
   },
 
   lab: {
-  label: "实验楼",
-  desc: "实验楼：转角多，减速塔和交叉火力更重要。",
-  path: [
-    { x: 0, y: 260 },
-    { x: 180, y: 260 },
-    { x: 180, y: 80 },
-    { x: 360, y: 80 },
-    { x: 360, y: 450 },
-    { x: 560, y: 450 },
-    { x: 560, y: 160 },
-    { x: 760, y: 160 },
-    { x: 760, y: 320 },
-    { x: 900, y: 320 }
-  ],
-  spots: [
-    { x: 70, y: 185 },
-    { x: 70, y: 335 },
-    { x: 260, y: 160 },
-    { x: 260, y: 350 },
-    { x: 430, y: 185 },
-    { x: 430, y: 500 },
-    { x: 640, y: 330 },
-    { x: 640, y: 95 },
-    { x: 815, y: 220 },
-    { x: 815, y: 385 }
+    label: "实验楼",
+    desc: "实验楼：转角多，减速塔和交叉火力更重要。",
+    path: [
+      { x: 0, y: 260 },
+      { x: 180, y: 260 },
+      { x: 180, y: 80 },
+      { x: 360, y: 80 },
+      { x: 360, y: 450 },
+      { x: 560, y: 450 },
+      { x: 560, y: 160 },
+      { x: 760, y: 160 },
+      { x: 760, y: 320 },
+      { x: 900, y: 320 }
+    ],
+    spots: [
+      { x: 70, y: 185 },
+      { x: 70, y: 335 },
+      { x: 260, y: 160 },
+      { x: 260, y: 350 },
+      { x: 430, y: 185 },
+      { x: 430, y: 500 },
+      { x: 640, y: 330 },
+      { x: 640, y: 95 },
+      { x: 815, y: 220 },
+      { x: 815, y: 385 }
+    ]
   }
 };
 
@@ -132,6 +133,8 @@ export const towerTypes = {
     size: 16,
     slow: 0,
     slowTime: 0,
+    splashRadius: 0,
+    splashFactor: 0,
     description: "台灯塔：便宜、稳定、适合前期铺场。",
     label: "灯"
   },
@@ -146,6 +149,8 @@ export const towerTypes = {
     size: 16,
     slow: 0.55,
     slowTime: 1.6,
+    splashRadius: 0,
+    splashFactor: 0,
     description: "咖啡塔：伤害较低，但能明显减速敌人。",
     label: "咖"
   },
@@ -160,8 +165,42 @@ export const towerTypes = {
     size: 17,
     slow: 0,
     slowTime: 0,
+    splashRadius: 0,
+    splashFactor: 0,
     description: "书本塔：单发高伤，适合处理厚血怪。",
     label: "书"
+  },
+  bomb: {
+    name: "范围塔",
+    cost: 180,
+    range: 115,
+    damage: 18,
+    fireRate: 1.8,
+    bulletSpeed: 260,
+    color: "#9333ea",
+    size: 17,
+    slow: 0,
+    slowTime: 0,
+    splashRadius: 64,
+    splashFactor: 0.65,
+    description: "范围塔：群体伤害，适合清杂兵。",
+    label: "爆"
+  },
+  sniper: {
+    name: "狙击塔",
+    cost: 220,
+    range: 220,
+    damage: 72,
+    fireRate: 2.4,
+    bulletSpeed: 520,
+    color: "#0f172a",
+    size: 16,
+    slow: 0,
+    slowTime: 0,
+    splashRadius: 0,
+    splashFactor: 0,
+    description: "狙击塔：远距离高伤，适合打精英和Boss。",
+    label: "狙"
   }
 };
 
@@ -211,6 +250,24 @@ export const enemyTypes = {
     radius: 18,
     label: "精"
   },
+  shield: {
+    name: "护盾怪",
+    hp: 46,
+    speed: 88,
+    reward: 24,
+    color: "#0891b2",
+    radius: 14,
+    label: "盾"
+  },
+  split: {
+    name: "分裂怪",
+    hp: 40,
+    speed: 102,
+    reward: 26,
+    color: "#db2777",
+    radius: 14,
+    label: "裂"
+  },
   boss: {
     name: "院长怪",
     hp: 300,
@@ -225,10 +282,10 @@ export const enemyTypes = {
 export const waves = [
   ["normal", "normal", "rush", "fast", "normal"],
   ["normal", "fast", "rush", "fast", "normal", "normal"],
-  ["normal", "fast", "tank", "rush", "normal", "fast"],
-  ["tank", "normal", "fast", "elite", "rush", "normal"],
-  ["tank", "fast", "tank", "rush", "elite", "fast"],
-  ["tank", "elite", "fast", "rush", "tank", "normal", "rush"],
-  ["elite", "tank", "rush", "fast", "elite", "normal", "tank"],
-  ["boss", "fast", "tank", "elite", "rush", "fast"]
+  ["normal", "fast", "tank", "rush", "normal", "shield"],
+  ["tank", "normal", "fast", "elite", "rush", "split"],
+  ["tank", "fast", "tank", "rush", "elite", "fast", "shield"],
+  ["tank", "elite", "fast", "rush", "tank", "normal", "split"],
+  ["elite", "tank", "rush", "fast", "elite", "normal", "tank", "shield"],
+  ["boss", "fast", "tank", "elite", "rush", "split"]
 ];
