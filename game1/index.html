@@ -3,11 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>宿舍保卫战</title>
+  <title>宿舍保卫战 V5 - 全球排行榜版</title>
   <style>
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
 
     body {
       margin: 0;
@@ -17,9 +15,10 @@
     }
 
     .app {
-      max-width: 1180px;
+      max-width: 1260px;
       margin: 0 auto;
       padding: 20px 16px 28px;
+      position: relative;
     }
 
     .title {
@@ -29,24 +28,25 @@
 
     .title h1 {
       margin: 0 0 6px;
-      font-size: 36px;
+      font-size: 38px;
     }
 
     .title p {
       margin: 0;
       color: #475569;
       font-size: 15px;
+      line-height: 1.7;
     }
 
-    .top-grid {
+    .layout {
       display: grid;
-      grid-template-columns: 1fr 340px;
+      grid-template-columns: 1fr 380px;
       gap: 16px;
       align-items: start;
     }
 
     .panel {
-      background: rgba(255,255,255,0.92);
+      background: rgba(255,255,255,0.94);
       border: 1px solid #dbe4f2;
       border-radius: 20px;
       box-shadow: 0 10px 28px rgba(15, 23, 42, 0.08);
@@ -55,7 +55,7 @@
 
     .stats {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
+      grid-template-columns: repeat(6, 1fr);
       gap: 10px;
       margin-bottom: 14px;
     }
@@ -73,12 +73,12 @@
       font-size: 12px;
       color: #64748b;
       margin-bottom: 6px;
-      font-weight: bold;
+      font-weight: 800;
     }
 
     .stat .value {
-      font-size: 22px;
-      font-weight: 800;
+      font-size: 18px;
+      font-weight: 900;
     }
 
     canvas {
@@ -91,25 +91,46 @@
     }
 
     .side h2 {
-      margin-top: 0;
-      margin-bottom: 10px;
+      margin: 0 0 10px;
       font-size: 22px;
+    }
+
+    .section {
+      margin-bottom: 14px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .section:last-child {
+      border-bottom: none;
+      margin-bottom: 0;
+      padding-bottom: 0;
+    }
+
+    .sub-title {
+      font-size: 15px;
+      font-weight: 900;
+      margin-bottom: 8px;
+      color: #334155;
     }
 
     .tower-list {
       display: grid;
       gap: 10px;
-      margin-bottom: 14px;
     }
 
     .tower-btn,
-    .main-btn {
+    .main-btn,
+    .small-btn,
+    .difficulty-btn,
+    .modal-btn,
+    .rank-tab {
       width: 100%;
       border: none;
       border-radius: 14px;
       padding: 12px 14px;
-      font-size: 15px;
-      font-weight: 800;
+      font-size: 14px;
+      font-weight: 900;
       cursor: pointer;
       transition: 0.2s ease;
     }
@@ -125,28 +146,100 @@
       color: white;
     }
 
-    .tower-btn:hover,
-    .main-btn:hover {
-      transform: translateY(-1px);
-    }
-
-    .main-btn {
+    .main-btn,
+    .modal-btn {
       background: #2563eb;
       color: white;
       margin-bottom: 10px;
     }
 
-    .main-btn.secondary {
+    .main-btn.secondary,
+    .modal-btn.secondary {
       background: #334155;
     }
 
-    .main-btn:disabled {
-      background: #94a3b8;
-      cursor: not-allowed;
-      transform: none;
+    .main-btn.skill {
+      background: #7c3aed;
     }
 
-    .desc-box {
+    .main-btn.sound-on {
+      background: #0f766e;
+    }
+
+    .main-btn.sound-off {
+      background: #64748b;
+    }
+
+    .difficulty-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin: 14px 0;
+    }
+
+    .difficulty-btn {
+      background: #e2e8f0;
+      color: #0f172a;
+    }
+
+    .difficulty-btn.active {
+      background: #2563eb;
+      color: white;
+    }
+
+    .rank-tab-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin: 12px 0 8px;
+    }
+
+    .rank-tab {
+      background: #e2e8f0;
+      color: #0f172a;
+      padding: 10px 12px;
+    }
+
+    .rank-tab.active {
+      background: #2563eb;
+      color: white;
+    }
+
+    .small-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .small-btn {
+      background: #f1f5f9;
+      color: #0f172a;
+    }
+
+    .tower-btn:hover,
+    .main-btn:hover,
+    .small-btn:hover,
+    .difficulty-btn:hover,
+    .modal-btn:hover,
+    .rank-tab:hover {
+      transform: translateY(-1px);
+    }
+
+    button:disabled {
+      background: #94a3b8 !important;
+      color: white !important;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+
+    .desc-box,
+    .info-box,
+    .log,
+    .preview-box,
+    .rank-box,
+    .nickname-box,
+    .status-box {
       background: #f8fafc;
       border: 1px solid #e2e8f0;
       border-radius: 14px;
@@ -157,39 +250,133 @@
       white-space: pre-wrap;
     }
 
-    .log {
-      margin-top: 12px;
+    .log { min-height: 88px; }
+    .preview-box { min-height: 78px; }
+
+    .hint {
+      color: #64748b;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.62);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      z-index: 100;
+    }
+
+    .overlay.hidden {
+      display: none;
+    }
+
+    .modal {
+      width: 100%;
+      max-width: 760px;
+      background: rgba(255,255,255,0.98);
+      border-radius: 24px;
+      box-shadow: 0 18px 48px rgba(15, 23, 42, 0.25);
+      padding: 28px 24px;
+      text-align: center;
+    }
+
+    .modal h2 {
+      margin: 0 0 10px;
+      font-size: 34px;
+    }
+
+    .modal p {
+      color: #475569;
+      line-height: 1.8;
+      margin: 0 0 16px;
+    }
+
+    .modal .modal-box {
+      text-align: left;
       background: #f8fafc;
       border: 1px solid #e2e8f0;
-      border-radius: 14px;
-      padding: 12px;
-      min-height: 88px;
+      border-radius: 16px;
+      padding: 14px;
+      margin: 14px 0 18px;
+      line-height: 1.8;
       color: #334155;
-      line-height: 1.7;
-      font-size: 14px;
       white-space: pre-wrap;
     }
 
-    .legend {
-      margin-top: 12px;
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
+    .modal-actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .nickname-input {
+      width: 100%;
+      border: 1px solid #cbd5e1;
       border-radius: 14px;
-      padding: 12px;
-      font-size: 14px;
-      line-height: 1.8;
-      color: #334155;
+      padding: 12px 14px;
+      font-size: 15px;
+      outline: none;
+      background: white;
+      color: #0f172a;
     }
 
-    .footer-note {
-      margin-top: 14px;
-      text-align: center;
+    .nickname-input:focus {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.10);
+    }
+
+    .rank-box {
+      max-height: 260px;
+      overflow: auto;
+      text-align: left;
+    }
+
+    .rank-item {
+      display: grid;
+      grid-template-columns: 44px 1fr auto;
+      gap: 10px;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .rank-item:last-child {
+      border-bottom: none;
+    }
+
+    .rank-index {
+      font-weight: 900;
+      color: #1d4ed8;
+    }
+
+    .rank-name {
+      font-weight: 800;
+      color: #0f172a;
+    }
+
+    .rank-meta {
       color: #64748b;
-      font-size: 13px;
+      font-size: 12px;
     }
 
-    @media (max-width: 980px) {
-      .top-grid {
+    .rank-score {
+      font-weight: 900;
+      color: #0f172a;
+    }
+
+    .status-box {
+      margin-top: 10px;
+      font-size: 13px;
+      color: #475569;
+    }
+
+    @media (max-width: 1020px) {
+      .layout {
         grid-template-columns: 1fr;
       }
 
@@ -200,17 +387,23 @@
       .title h1 {
         font-size: 30px;
       }
+
+      .difficulty-row {
+        grid-template-columns: 1fr;
+      }
     }
   </style>
 </head>
 <body>
   <div class="app">
     <div class="title">
-      <h1>宿舍保卫战</h1>
-      <p>选择塔后，点击地图上的圆形空位放塔。敌人走到宿舍门口会扣血。</p>
+      <h1>宿舍保卫战 V5</h1>
+      <p>
+        Firebase 全球排行榜版。选择难度，建立防线，和所有玩家比拼最高分。
+      </p>
     </div>
 
-    <div class="top-grid">
+    <div class="layout">
       <div class="panel">
         <div class="stats">
           <div class="stat">
@@ -222,12 +415,20 @@
             <span class="value" id="livesText">10</span>
           </div>
           <div class="stat">
-            <span class="label">当前波次</span>
-            <span class="value" id="waveText">0 / 5</span>
+            <span class="label">波次</span>
+            <span class="value" id="waveText">0 / 6</span>
           </div>
           <div class="stat">
             <span class="label">状态</span>
-            <span class="value" id="stateText" style="font-size:18px;">准备中</span>
+            <span class="value" id="stateText">未开始</span>
+          </div>
+          <div class="stat">
+            <span class="label">技能冷却</span>
+            <span class="value" id="skillCdText">就绪</span>
+          </div>
+          <div class="stat">
+            <span class="label">分数</span>
+            <span class="value" id="scoreText">0</span>
           </div>
         </div>
 
@@ -235,48 +436,134 @@
       </div>
 
       <div class="panel side">
-        <h2>防御塔</h2>
-
-        <div class="tower-list">
-          <button class="tower-btn" id="lampBtn">
-            台灯塔（100）
-          </button>
-          <button class="tower-btn" id="coffeeBtn">
-            咖啡塔（120）
-          </button>
-          <button class="tower-btn" id="bookBtn">
-            书本塔（150）
-          </button>
+        <div class="section">
+          <h2>操作面板</h2>
+          <button class="main-btn" id="startWaveBtn">开始下一波</button>
+          <button class="main-btn secondary" id="pauseBtn">暂停游戏</button>
+          <button class="main-btn skill" id="skillBtn">释放技能：全场减速</button>
+          <button class="main-btn sound-on" id="soundBtn">音效：开启</button>
+          <button class="main-btn secondary" id="restartBtn">重新开始</button>
+          <div class="hint">技能效果：全场减速 3 秒，冷却 25 秒。</div>
         </div>
 
-        <button class="main-btn" id="startWaveBtn">开始下一波</button>
-        <button class="main-btn secondary" id="restartBtn">重新开始</button>
-
-        <div class="desc-box" id="descBox">
+        <div class="section">
+          <div class="sub-title">放置防御塔</div>
+          <div class="tower-list">
+            <button class="tower-btn" id="lampBtn">台灯塔（100）</button>
+            <button class="tower-btn" id="coffeeBtn">咖啡塔（120）</button>
+            <button class="tower-btn" id="bookBtn">书本塔（150）</button>
+          </div>
+          <div class="desc-box" id="descBox">
 选择一个塔，然后点击地图上的圆形空位放置。
 
 台灯塔：基础输出，便宜。
 咖啡塔：伤害较低，但会减速。
 书本塔：单发高伤，适合打厚血怪。
+          </div>
         </div>
 
-        <div class="log" id="logBox">欢迎来到宿舍保卫战。先放塔，再开始第一波。</div>
+        <div class="section">
+          <div class="sub-title">选中塔信息</div>
+          <div class="info-box" id="selectedTowerInfo">当前没有选中任何塔。</div>
+          <div class="small-row">
+            <button class="small-btn" id="upgradeBtn" disabled>升级塔</button>
+            <button class="small-btn" id="sellBtn" disabled>卖出塔</button>
+          </div>
+        </div>
 
-        <div class="legend">
-          <strong>敌人说明</strong><br>
-          蓝色：拖延怪（普通）<br>
-          橙色：熬夜怪（快速）<br>
-          红色：截止日怪（高血量）
+        <div class="section">
+          <div class="sub-title">下一波预览</div>
+          <div class="preview-box" id="wavePreviewBox">第 1 波：拖延怪 × 6</div>
+        </div>
+
+        <div class="section">
+          <div class="sub-title">战斗日志</div>
+          <div class="log" id="logBox">欢迎来到宿舍保卫战。先放塔，再开始第一波。</div>
         </div>
       </div>
     </div>
+  </div>
 
-    <div class="footer-note">
-      这是浏览器原型版，后面可以继续改成微信小游戏。
+  <!-- 首页 -->
+  <div class="overlay" id="startOverlay">
+    <div class="modal">
+      <h2>宿舍保卫战</h2>
+      <p>拖延怪、熬夜怪和截止日怪正在逼近宿舍门口。输入昵称，选择难度，冲击全球排行榜。</p>
+
+      <div class="nickname-box">
+        <div style="font-weight:900; margin-bottom:8px;">玩家昵称</div>
+        <input id="nicknameInput" class="nickname-input" maxlength="20" placeholder="输入昵称，例如 Lee" />
+      </div>
+
+      <div class="difficulty-row">
+        <button class="difficulty-btn active" data-difficulty="easy">简单</button>
+        <button class="difficulty-btn" data-difficulty="normal">普通</button>
+        <button class="difficulty-btn" data-difficulty="hard">困难</button>
+      </div>
+
+      <div class="modal-box" id="difficultyInfo">简单：初始金币更多，基地血量更高，敌人更弱。</div>
+
+      <div class="rank-tab-row">
+        <button class="rank-tab active" id="globalRankTab">全球总榜</button>
+        <button class="rank-tab" id="difficultyRankTab">当前难度榜</button>
+      </div>
+
+      <div class="rank-box" id="leaderboardBox">排行榜加载中...</div>
+      <div class="status-box" id="leaderboardStatus">正在连接排行榜服务...</div>
+
+      <div class="modal-actions" style="margin-top:16px;">
+        <button class="modal-btn" id="startGameBtn">开始游戏</button>
+      </div>
     </div>
   </div>
 
-  <script>
+  <!-- 结算 -->
+  <div class="overlay hidden" id="resultOverlay">
+    <div class="modal">
+      <h2 id="resultTitle">胜利！</h2>
+      <p id="resultSubtitle">你成功守住了宿舍。</p>
+      <div class="modal-box" id="resultBox"></div>
+
+      <div class="rank-tab-row">
+        <button class="rank-tab active" id="resultGlobalRankTab">全球总榜</button>
+        <button class="rank-tab" id="resultDifficultyRankTab">当前难度榜</button>
+      </div>
+
+      <div class="rank-box" id="resultLeaderboardBox">排行榜加载中...</div>
+      <div class="status-box" id="resultLeaderboardStatus">正在同步全球分数...</div>
+
+      <div class="modal-actions" style="margin-top:16px;">
+        <button class="modal-btn" id="playAgainBtn">再来一局</button>
+        <button class="modal-btn secondary" id="backTitleBtn">返回首页</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import {
+      getFirestore,
+      collection,
+      addDoc,
+      getDocs,
+      query,
+      orderBy,
+      limit
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBG13sf3G1q21Qe8L21pwcb15Q6QKvR_jk",
+      authDomain: "tafang-831fa.firebaseapp.com",
+      projectId: "tafang-831fa",
+      storageBucket: "tafang-831fa.firebasestorage.app",
+      messagingSenderId: "756711920189",
+      appId: "1:756711920189:web:aca84559d69d92372d9054",
+      measurementId: "G-B6XYLRVPMM"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
     const canvas = document.getElementById("gameCanvas");
     const ctx = canvas.getContext("2d");
 
@@ -284,17 +571,78 @@
     const livesText = document.getElementById("livesText");
     const waveText = document.getElementById("waveText");
     const stateText = document.getElementById("stateText");
+    const skillCdText = document.getElementById("skillCdText");
+    const scoreText = document.getElementById("scoreText");
     const logBox = document.getElementById("logBox");
     const descBox = document.getElementById("descBox");
+    const selectedTowerInfo = document.getElementById("selectedTowerInfo");
+    const wavePreviewBox = document.getElementById("wavePreviewBox");
 
     const lampBtn = document.getElementById("lampBtn");
     const coffeeBtn = document.getElementById("coffeeBtn");
     const bookBtn = document.getElementById("bookBtn");
     const startWaveBtn = document.getElementById("startWaveBtn");
+    const pauseBtn = document.getElementById("pauseBtn");
     const restartBtn = document.getElementById("restartBtn");
+    const upgradeBtn = document.getElementById("upgradeBtn");
+    const sellBtn = document.getElementById("sellBtn");
+    const skillBtn = document.getElementById("skillBtn");
+    const soundBtn = document.getElementById("soundBtn");
+
+    const startOverlay = document.getElementById("startOverlay");
+    const startGameBtn = document.getElementById("startGameBtn");
+    const resultOverlay = document.getElementById("resultOverlay");
+    const resultTitle = document.getElementById("resultTitle");
+    const resultSubtitle = document.getElementById("resultSubtitle");
+    const resultBox = document.getElementById("resultBox");
+    const playAgainBtn = document.getElementById("playAgainBtn");
+    const backTitleBtn = document.getElementById("backTitleBtn");
+    const difficultyInfo = document.getElementById("difficultyInfo");
+    const difficultyButtons = document.querySelectorAll(".difficulty-btn");
+    const nicknameInput = document.getElementById("nicknameInput");
+
+    const leaderboardBox = document.getElementById("leaderboardBox");
+    const leaderboardStatus = document.getElementById("leaderboardStatus");
+    const resultLeaderboardBox = document.getElementById("resultLeaderboardBox");
+    const resultLeaderboardStatus = document.getElementById("resultLeaderboardStatus");
+
+    const globalRankTab = document.getElementById("globalRankTab");
+    const difficultyRankTab = document.getElementById("difficultyRankTab");
+    const resultGlobalRankTab = document.getElementById("resultGlobalRankTab");
+    const resultDifficultyRankTab = document.getElementById("resultDifficultyRankTab");
 
     const WIDTH = canvas.width;
     const HEIGHT = canvas.height;
+
+    const difficultyConfigs = {
+      easy: {
+        label: "简单",
+        startGold: 320,
+        startLives: 12,
+        enemyHpMul: 0.88,
+        enemySpeedMul: 0.92,
+        rewardMul: 1.0,
+        desc: "简单：初始金币更多，基地血量更高，敌人更弱。"
+      },
+      normal: {
+        label: "普通",
+        startGold: 240,
+        startLives: 10,
+        enemyHpMul: 1.0,
+        enemySpeedMul: 1.0,
+        rewardMul: 1.0,
+        desc: "普通：标准模式，适合正常游玩。"
+      },
+      hard: {
+        label: "困难",
+        startGold: 210,
+        startLives: 8,
+        enemyHpMul: 1.18,
+        enemySpeedMul: 1.08,
+        rewardMul: 1.08,
+        desc: "困难：怪物更硬更快，基地更脆弱。"
+      }
+    };
 
     const pathPoints = [
       { x: 0, y: 100 },
@@ -332,7 +680,8 @@
         size: 16,
         slow: 0,
         slowTime: 0,
-        description: "台灯塔：便宜、稳定、适合前期铺场。"
+        description: "台灯塔：便宜、稳定、适合前期铺场。",
+        label: "灯"
       },
       coffee: {
         name: "咖啡塔",
@@ -345,7 +694,8 @@
         size: 16,
         slow: 0.55,
         slowTime: 1.5,
-        description: "咖啡塔：伤害较低，但能明显减速敌人。"
+        description: "咖啡塔：伤害较低，但能明显减速敌人。",
+        label: "咖"
       },
       book: {
         name: "书本塔",
@@ -358,7 +708,8 @@
         size: 17,
         slow: 0,
         slowTime: 0,
-        description: "书本塔：单发高伤，适合处理厚血怪。"
+        description: "书本塔：单发高伤，适合处理厚血怪。",
+        label: "书"
       }
     };
 
@@ -369,7 +720,8 @@
         speed: 80,
         reward: 20,
         color: "#3b82f6",
-        radius: 14
+        radius: 14,
+        label: "拖"
       },
       fast: {
         name: "熬夜怪",
@@ -377,53 +729,81 @@
         speed: 130,
         reward: 18,
         color: "#f59e0b",
-        radius: 12
+        radius: 12,
+        label: "夜"
       },
       tank: {
         name: "截止日怪",
-        hp: 90,
+        hp: 95,
         speed: 58,
         reward: 35,
         color: "#ef4444",
-        radius: 17
+        radius: 17,
+        label: "截"
       }
     };
 
     const waves = [
-      ["normal", "normal", "normal", "fast", "normal", "normal"],
-      ["normal", "normal", "fast", "fast", "normal", "normal", "fast", "normal"],
+      ["normal", "normal", "normal", "normal", "fast", "normal"],
+      ["normal", "normal", "fast", "fast", "normal", "normal", "fast"],
       ["normal", "fast", "fast", "normal", "tank", "normal", "fast"],
       ["tank", "normal", "fast", "tank", "normal", "normal", "fast", "normal"],
-      ["tank", "fast", "tank", "fast", "tank", "normal", "fast", "fast", "tank"]
+      ["tank", "fast", "tank", "fast", "tank", "normal", "fast", "fast", "tank"],
+      ["tank", "tank", "fast", "fast", "normal", "tank", "fast", "normal", "fast", "tank"]
     ];
+
+    let currentDifficulty = "easy";
+    let rankViewMode = "global";
+    let resultRankViewMode = "global";
+    let leaderboardCache = [];
+    let playerNickname = "";
+    let scoreSubmitted = false;
 
     let gold = 240;
     let lives = 10;
     let waveIndex = -1;
     let selectedTowerType = null;
+    let selectedPlacedTower = null;
+    let score = 0;
 
     let towers = [];
     let enemies = [];
     let bullets = [];
+    let particles = [];
 
+    let gameStarted = false;
     let gameOver = false;
     let victory = false;
+    let gamePaused = false;
 
     let waveActive = false;
     let spawnQueue = [];
     let spawnTimer = 0;
     let spawnInterval = 0.9;
 
+    let skillCooldown = 0;
+    let globalSlowTimer = 0;
+    let skillFlashTimer = 0;
+
     let enemyIdCounter = 0;
     let lastTime = 0;
+
+    let soundEnabled = true;
+    let audioCtx = null;
 
     const segments = [];
     let totalPathLength = 0;
 
+    function escapeHTML(str) {
+      return String(str)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;");
+    }
+
     function buildPathData() {
       segments.length = 0;
       totalPathLength = 0;
-
       for (let i = 0; i < pathPoints.length - 1; i++) {
         const a = pathPoints[i];
         const b = pathPoints[i + 1];
@@ -443,9 +823,51 @@
       }
     }
 
+    function initAudio() {
+      if (!soundEnabled) return;
+      try {
+        if (!audioCtx) {
+          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioCtx.state === "suspended") {
+          audioCtx.resume();
+        }
+      } catch (e) {
+        soundEnabled = false;
+        updateSoundButton();
+      }
+    }
+
+    function playTone(freq, duration = 0.08, type = "sine", volume = 0.03) {
+      if (!soundEnabled) return;
+      initAudio();
+      if (!audioCtx) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = type;
+      osc.frequency.value = freq;
+      gain.gain.value = volume;
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+      osc.stop(audioCtx.currentTime + duration);
+    }
+
+    function updateSoundButton() {
+      soundBtn.textContent = soundEnabled ? "音效：开启" : "音效：关闭";
+      soundBtn.classList.toggle("sound-on", soundEnabled);
+      soundBtn.classList.toggle("sound-off", !soundEnabled);
+    }
+
+    function toggleSound() {
+      soundEnabled = !soundEnabled;
+      updateSoundButton();
+      if (soundEnabled) playTone(520, 0.08, "triangle", 0.02);
+    }
+
     function getPositionOnPath(distance) {
       const d = Math.max(0, Math.min(distance, totalPathLength));
-
       for (const seg of segments) {
         if (d >= seg.start && d <= seg.end) {
           const t = (d - seg.start) / seg.len;
@@ -455,31 +877,8 @@
           };
         }
       }
-
       const last = pathPoints[pathPoints.length - 1];
       return { x: last.x, y: last.y };
-    }
-
-    function resetGame() {
-      gold = 240;
-      lives = 10;
-      waveIndex = -1;
-      selectedTowerType = null;
-      towers = [];
-      enemies = [];
-      bullets = [];
-      gameOver = false;
-      victory = false;
-      waveActive = false;
-      spawnQueue = [];
-      spawnTimer = 0;
-      enemyIdCounter = 0;
-
-      towerSpots.forEach(s => s.tower = null);
-
-      setActiveTowerButton(null);
-      updateUI();
-      setLog("欢迎来到宿舍保卫战。先放塔，再开始第一波。");
     }
 
     function setLog(text) {
@@ -488,7 +887,10 @@
 
     function setActiveTowerButton(type) {
       selectedTowerType = type;
-      [lampBtn, coffeeBtn, bookBtn].forEach(btn => btn.classList.remove("active"));
+      selectedPlacedTower = null;
+      lampBtn.classList.remove("active");
+      coffeeBtn.classList.remove("active");
+      bookBtn.classList.remove("active");
 
       if (type === "lamp") lampBtn.classList.add("active");
       if (type === "coffee") coffeeBtn.classList.add("active");
@@ -504,70 +906,324 @@
 咖啡塔：伤害较低，但会减速。
 书本塔：单发高伤，适合打厚血怪。`;
       }
+
+      refreshSelectedTowerInfo();
+    }
+
+    function refreshSelectedTowerInfo() {
+      if (!selectedPlacedTower) {
+        selectedTowerInfo.textContent = "当前没有选中任何塔。";
+        upgradeBtn.disabled = true;
+        sellBtn.disabled = true;
+        return;
+      }
+
+      const upgradeCost = getUpgradeCost(selectedPlacedTower);
+      const sellValue = getSellValue(selectedPlacedTower);
+
+      selectedTowerInfo.textContent =
+`${selectedPlacedTower.name}
+等级：${selectedPlacedTower.level}
+伤害：${selectedPlacedTower.damage}
+范围：${Math.round(selectedPlacedTower.range)}
+攻速间隔：${selectedPlacedTower.fireRate.toFixed(2)} 秒
+升级花费：${selectedPlacedTower.level >= 3 ? "已满级" : upgradeCost}
+卖出价格：${sellValue}`;
+
+      upgradeBtn.disabled = selectedPlacedTower.level >= 3 || gold < upgradeCost;
+      sellBtn.disabled = false;
+    }
+
+    function countWaveComposition(wave) {
+      const map = { normal: 0, fast: 0, tank: 0 };
+      wave.forEach(e => map[e]++);
+      const parts = [];
+      if (map.normal) parts.push(`拖延怪 × ${map.normal}`);
+      if (map.fast) parts.push(`熬夜怪 × ${map.fast}`);
+      if (map.tank) parts.push(`截止日怪 × ${map.tank}`);
+      return parts.join("\n");
+    }
+
+    function updateWavePreview() {
+      if (waveIndex + 1 >= waves.length) {
+        wavePreviewBox.textContent = "已经没有下一波了。";
+        return;
+      }
+      wavePreviewBox.textContent =
+`第 ${waveIndex + 2} 波预览：
+${countWaveComposition(waves[waveIndex + 1])}`;
     }
 
     function updateUI() {
       goldText.textContent = gold;
       livesText.textContent = lives;
       waveText.textContent = `${Math.max(waveIndex + 1, 0)} / ${waves.length}`;
+      scoreText.textContent = score;
 
-      if (gameOver) {
+      if (!gameStarted) {
+        stateText.textContent = "未开始";
+      } else if (gameOver) {
         stateText.textContent = "失败";
       } else if (victory) {
         stateText.textContent = "胜利";
+      } else if (gamePaused) {
+        stateText.textContent = "暂停";
       } else if (waveActive) {
         stateText.textContent = "战斗中";
       } else {
         stateText.textContent = "准备中";
       }
 
-      if (gameOver || victory || waveActive || waveIndex >= waves.length - 1 && !gameOver && !victory) {
-        startWaveBtn.disabled = waveActive || gameOver || victory || (waveIndex >= waves.length - 1);
+      if (skillCooldown <= 0) {
+        skillCdText.textContent = "就绪";
       } else {
-        startWaveBtn.disabled = false;
+        skillCdText.textContent = `${skillCooldown.toFixed(1)}s`;
       }
 
-      if (waveIndex >= waves.length - 1 && !waveActive && !victory && !gameOver) {
-        startWaveBtn.disabled = true;
+      startWaveBtn.disabled = !gameStarted || waveActive || gameOver || victory || waveIndex >= waves.length - 1;
+      pauseBtn.disabled = !gameStarted || gameOver || victory;
+      pauseBtn.textContent = gamePaused ? "继续游戏" : "暂停游戏";
+      skillBtn.disabled = !gameStarted || gameOver || victory || skillCooldown > 0;
+
+      if (gameOver || victory) {
+        resultOverlay.classList.remove("hidden");
+      } else {
+        resultOverlay.classList.add("hidden");
+      }
+
+      refreshSelectedTowerInfo();
+      updateWavePreview();
+    }
+
+    function spawnParticles(x, y, color, count, speed = 120, life = 0.4) {
+      for (let i = 0; i < count; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const v = Math.random() * speed;
+        particles.push({
+          x, y,
+          vx: Math.cos(angle) * v,
+          vy: Math.sin(angle) * v,
+          life,
+          maxLife: life,
+          color,
+          size: 2 + Math.random() * 3
+        });
       }
     }
 
+    function resetGame() {
+      const cfg = difficultyConfigs[currentDifficulty];
+
+      gold = cfg.startGold;
+      lives = cfg.startLives;
+      waveIndex = -1;
+      selectedTowerType = null;
+      selectedPlacedTower = null;
+      score = 0;
+      scoreSubmitted = false;
+
+      towers = [];
+      enemies = [];
+      bullets = [];
+      particles = [];
+
+      gameOver = false;
+      victory = false;
+      gamePaused = false;
+
+      waveActive = false;
+      spawnQueue = [];
+      spawnTimer = 0;
+
+      skillCooldown = 0;
+      globalSlowTimer = 0;
+      skillFlashTimer = 0;
+
+      enemyIdCounter = 0;
+      lastTime = 0;
+
+      towerSpots.forEach(s => s.tower = null);
+
+      setActiveTowerButton(null);
+      setLog(`欢迎来到宿舍保卫战（${cfg.label}）。先放塔，再开始第一波。`);
+      updateUI();
+    }
+
+    function validateNickname(name) {
+      const trimmed = name.trim();
+      return trimmed.length >= 1 && trimmed.length <= 20;
+    }
+
+    function startGame() {
+      const name = nicknameInput.value.trim();
+      if (!validateNickname(name)) {
+        leaderboardStatus.textContent = "请输入 1 到 20 个字符的昵称。";
+        return;
+      }
+
+      playerNickname = name;
+      initAudio();
+      playTone(420, 0.08, "triangle", 0.02);
+      setTimeout(() => playTone(620, 0.09, "triangle", 0.02), 90);
+
+      gameStarted = true;
+      startOverlay.classList.add("hidden");
+      resultOverlay.classList.add("hidden");
+      resetGame();
+    }
+
+    function backToTitle() {
+      gameStarted = false;
+      resetGame();
+      resultOverlay.classList.add("hidden");
+      startOverlay.classList.remove("hidden");
+      refreshLeaderboards();
+    }
+
+    async function submitScoreToCloud() {
+      if (scoreSubmitted) return;
+      if (!validateNickname(playerNickname)) return;
+      if (score <= 0) return;
+
+      scoreSubmitted = true;
+
+      try {
+        await addDoc(collection(db, "leaderboard"), {
+          nickname: playerNickname,
+          score: Math.round(score),
+          wave: Math.max(waveIndex + 1, 0),
+          difficulty: currentDifficulty,
+          createdAt: Date.now()
+        });
+        resultLeaderboardStatus.textContent = "成绩已成功提交到全球排行榜。";
+      } catch (error) {
+        console.error(error);
+        resultLeaderboardStatus.textContent = "成绩提交失败，请检查 Firestore 规则或网络。";
+      }
+
+      await refreshLeaderboards();
+    }
+
+    function renderLeaderboard(list, container, mode) {
+      if (!list.length) {
+        container.innerHTML = "暂无记录。";
+        return;
+      }
+
+      const filtered = mode === "global"
+        ? list
+        : list.filter(item => item.difficulty === currentDifficulty);
+
+      if (!filtered.length) {
+        container.innerHTML = "当前难度暂无记录。";
+        return;
+      }
+
+      const sorted = [...filtered].sort((a, b) => {
+        if (b.score !== a.score) return b.score - a.score;
+        if (b.wave !== a.wave) return b.wave - a.wave;
+        return (a.createdAt || 0) - (b.createdAt || 0);
+      }).slice(0, 20);
+
+      container.innerHTML = sorted.map((item, idx) => `
+        <div class="rank-item">
+          <div class="rank-index">#${idx + 1}</div>
+          <div>
+            <div class="rank-name">${escapeHTML(item.nickname)}</div>
+            <div class="rank-meta">${difficultyConfigs[item.difficulty]?.label || item.difficulty} · 波次 ${item.wave}</div>
+          </div>
+          <div class="rank-score">${item.score}</div>
+        </div>
+      `).join("");
+    }
+
+    async function refreshLeaderboards() {
+      leaderboardStatus.textContent = "正在刷新排行榜...";
+      resultLeaderboardStatus.textContent = "正在刷新排行榜...";
+
+      try {
+        const q = query(
+          collection(db, "leaderboard"),
+          orderBy("score", "desc"),
+          limit(100)
+        );
+        const snap = await getDocs(q);
+        leaderboardCache = snap.docs.map(doc => doc.data());
+
+        renderLeaderboard(leaderboardCache, leaderboardBox, rankViewMode);
+        renderLeaderboard(leaderboardCache, resultLeaderboardBox, resultRankViewMode);
+
+        leaderboardStatus.textContent = "全球排行榜已更新。";
+        resultLeaderboardStatus.textContent = scoreSubmitted
+          ? "成绩已同步，排行榜已更新。"
+          : "排行榜已更新。";
+      } catch (error) {
+        console.error(error);
+        leaderboardBox.innerHTML = "排行榜读取失败。";
+        resultLeaderboardBox.innerHTML = "排行榜读取失败。";
+        leaderboardStatus.textContent = "请检查 Firestore 规则、网络，或确认已用 GitHub Pages 打开。";
+        resultLeaderboardStatus.textContent = "排行榜读取失败。";
+      }
+    }
+
+    function setDifficulty(diff) {
+      currentDifficulty = diff;
+      difficultyButtons.forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.difficulty === diff);
+      });
+      difficultyInfo.textContent = difficultyConfigs[diff].desc;
+      renderLeaderboard(leaderboardCache, leaderboardBox, rankViewMode);
+      renderLeaderboard(leaderboardCache, resultLeaderboardBox, resultRankViewMode);
+    }
+
+    function setRankMode(mode) {
+      rankViewMode = mode;
+      globalRankTab.classList.toggle("active", mode === "global");
+      difficultyRankTab.classList.toggle("active", mode === "difficulty");
+      renderLeaderboard(leaderboardCache, leaderboardBox, rankViewMode);
+    }
+
+    function setResultRankMode(mode) {
+      resultRankViewMode = mode;
+      resultGlobalRankTab.classList.toggle("active", mode === "global");
+      resultDifficultyRankTab.classList.toggle("active", mode === "difficulty");
+      renderLeaderboard(leaderboardCache, resultLeaderboardBox, resultRankViewMode);
+    }
+
+    function showResultPanel() {
+      resultTitle.textContent = victory ? "胜利！" : "失败！";
+      resultSubtitle.textContent = victory ? "你成功守住了宿舍。" : "宿舍被突破了。";
+
+      resultBox.textContent =
+`玩家：${playerNickname}
+难度：${difficultyConfigs[currentDifficulty].label}
+最终波次：${Math.max(waveIndex + 1, 0)} / ${waves.length}
+剩余基地血量：${lives}
+剩余金币：${gold}
+已放置防御塔：${towers.length}
+本局分数：${score}
+
+${victory ? "干得漂亮，你守住了最后一波。" : "别灰心，调整塔的位置和升级顺序再试一次。"}`;
+    }
+
     function startNextWave() {
-      if (gameOver || victory || waveActive) return;
+      if (gameOver || victory || gamePaused || waveActive) return;
       if (waveIndex >= waves.length - 1) return;
 
       waveIndex++;
       spawnQueue = [...waves[waveIndex]];
       spawnTimer = 0;
       waveActive = true;
-
-      setLog(`第 ${waveIndex + 1} 波开始！敌人来了！`);
+      setLog(`第 ${waveIndex + 1} 波开始！怪物来了！`);
+      playTone(360, 0.08, "sawtooth", 0.025);
       updateUI();
-    }
-
-    function spawnEnemy(typeKey) {
-      const t = enemyTypes[typeKey];
-      enemies.push({
-        id: enemyIdCounter++,
-        type: typeKey,
-        name: t.name,
-        hp: t.hp,
-        maxHp: t.hp,
-        speed: t.speed,
-        reward: t.reward,
-        color: t.color,
-        radius: t.radius,
-        distance: 0,
-        alive: true,
-        slowFactor: 1,
-        slowTimer: 0
-      });
     }
 
     function createTower(type, x, y) {
       const t = towerTypes[type];
       return {
         type,
+        name: t.name,
         x,
         y,
         range: t.range,
@@ -578,8 +1234,126 @@
         size: t.size,
         cooldown: 0,
         slow: t.slow,
-        slowTime: t.slowTime
+        slowTime: t.slowTime,
+        label: t.label,
+        level: 1,
+        spent: t.cost,
+        spotRef: null
       };
+    }
+
+    function createEnemy(typeKey) {
+      const t = enemyTypes[typeKey];
+      const cfg = difficultyConfigs[currentDifficulty];
+      return {
+        id: enemyIdCounter++,
+        type: typeKey,
+        name: t.name,
+        hp: Math.round(t.hp * cfg.enemyHpMul),
+        maxHp: Math.round(t.hp * cfg.enemyHpMul),
+        speed: t.speed * cfg.enemySpeedMul,
+        reward: Math.round(t.reward * cfg.rewardMul),
+        color: t.color,
+        radius: t.radius,
+        label: t.label,
+        distance: 0,
+        alive: true,
+        slowFactor: 1,
+        slowTimer: 0
+      };
+    }
+
+    function spawnEnemy(typeKey) {
+      enemies.push(createEnemy(typeKey));
+    }
+
+    function getUpgradeCost(tower) {
+      if (tower.level === 1) return Math.round(tower.spent * 0.7);
+      if (tower.level === 2) return Math.round(tower.spent * 0.55);
+      return 999999;
+    }
+
+    function getSellValue(tower) {
+      return Math.round(tower.spent * 0.7);
+    }
+
+    function upgradeTower() {
+      if (!selectedPlacedTower) return;
+      if (selectedPlacedTower.level >= 3) {
+        setLog("这个塔已经满级了。");
+        return;
+      }
+
+      const cost = getUpgradeCost(selectedPlacedTower);
+      if (gold < cost) {
+        setLog("金币不足，无法升级。");
+        return;
+      }
+
+      gold -= cost;
+      selectedPlacedTower.spent += cost;
+      selectedPlacedTower.level += 1;
+      selectedPlacedTower.damage = Math.round(selectedPlacedTower.damage * 1.45);
+      selectedPlacedTower.range += 12;
+      selectedPlacedTower.fireRate = Math.max(0.55, selectedPlacedTower.fireRate * 0.9);
+
+      score += 20;
+      spawnParticles(selectedPlacedTower.x, selectedPlacedTower.y, selectedPlacedTower.color, 10, 90, 0.35);
+      playTone(660, 0.07, "triangle", 0.02);
+      setLog(`${selectedPlacedTower.name} 已升级到 Lv.${selectedPlacedTower.level}。`);
+      updateUI();
+    }
+
+    function sellTower() {
+      if (!selectedPlacedTower) return;
+
+      const value = getSellValue(selectedPlacedTower);
+      gold += value;
+
+      towers = towers.filter(t => t !== selectedPlacedTower);
+      if (selectedPlacedTower.spotRef) {
+        selectedPlacedTower.spotRef.tower = null;
+      }
+
+      spawnParticles(selectedPlacedTower.x, selectedPlacedTower.y, "#94a3b8", 8, 80, 0.3);
+      playTone(260, 0.08, "triangle", 0.02);
+      setLog(`${selectedPlacedTower.name} 已卖出，获得 ${value} 金币。`);
+      selectedPlacedTower = null;
+      updateUI();
+    }
+
+    function castSkill() {
+      if (skillCooldown > 0 || gameOver || victory) return;
+      skillCooldown = 25;
+      globalSlowTimer = 3;
+      skillFlashTimer = 0.35;
+
+      for (const enemy of enemies) {
+        enemy.slowFactor = Math.min(enemy.slowFactor, 0.45);
+        enemy.slowTimer = Math.max(enemy.slowTimer, 3);
+      }
+
+      for (let i = 0; i < 18; i++) {
+        spawnParticles(WIDTH / 2, HEIGHT / 2, "#7c3aed", 3, 220, 0.55);
+      }
+
+      playTone(520, 0.08, "sine", 0.025);
+      setTimeout(() => playTone(440, 0.08, "sine", 0.025), 80);
+
+      score += 15;
+      setLog("已释放技能：全场减速！所有敌人减速 3 秒。");
+      updateUI();
+    }
+
+    function togglePause() {
+      if (gameOver || victory) return;
+      gamePaused = !gamePaused;
+      if (gamePaused) {
+        setLog("游戏已暂停。");
+      } else {
+        setLog("游戏继续。");
+      }
+      updateUI();
     }
 
     function findTarget(tower) {
@@ -606,27 +1380,57 @@
       if (!enemy || !enemy.alive) return;
 
       enemy.hp -= bullet.damage;
+      spawnParticles(enemy.x, enemy.y, bullet.color, 3, 50, 0.18);
 
       if (bullet.slow > 0) {
-        enemy.slowFactor = bullet.slow;
+        enemy.slowFactor = Math.min(enemy.slowFactor, bullet.slow);
         enemy.slowTimer = Math.max(enemy.slowTimer, bullet.slowTime);
       }
 
       if (enemy.hp <= 0 && enemy.alive) {
         enemy.alive = false;
         gold += enemy.reward;
+        score += enemy.reward;
+        spawnParticles(enemy.x, enemy.y, enemy.color, 14, 150, 0.45);
+        playTone(820, 0.04, "square", 0.012);
       }
     }
 
     function updateGame(dt) {
-      if (gameOver || victory) {
+      if (!gameStarted) {
         updateUI();
         return;
       }
 
+      if (gameOver || victory) {
+        showResultPanel();
+        if (!scoreSubmitted) submitScoreToCloud();
+        updateUI();
+        return;
+      }
+
+      if (gamePaused) {
+        updateUI();
+        return;
+      }
+
+      if (skillCooldown > 0) {
+        skillCooldown -= dt;
+        if (skillCooldown < 0) skillCooldown = 0;
+      }
+
+      if (globalSlowTimer > 0) {
+        globalSlowTimer -= dt;
+        if (globalSlowTimer < 0) globalSlowTimer = 0;
+      }
+
+      if (skillFlashTimer > 0) {
+        skillFlashTimer -= dt;
+        if (skillFlashTimer < 0) skillFlashTimer = 0;
+      }
+
       if (waveActive) {
         spawnTimer += dt;
-
         if (spawnQueue.length > 0 && spawnTimer >= spawnInterval) {
           spawnEnemy(spawnQueue.shift());
           spawnTimer = 0;
@@ -634,9 +1438,12 @@
 
         if (spawnQueue.length === 0 && enemies.length === 0) {
           waveActive = false;
-
+          score += 40;
           if (waveIndex === waves.length - 1) {
             victory = true;
+            playTone(523, 0.08, "triangle", 0.02);
+            setTimeout(() => playTone(659, 0.08, "triangle", 0.02), 80);
+            setTimeout(() => playTone(784, 0.1, "triangle", 0.02), 160);
             setLog("恭喜你，守住了宿舍！你赢了！");
           } else {
             setLog(`第 ${waveIndex + 1} 波结束。准备下一波。`);
@@ -655,11 +1462,14 @@
           }
         }
 
-        enemy.distance += enemy.speed * enemy.slowFactor * dt;
+        const globalFactor = globalSlowTimer > 0 ? 0.65 : 1;
+        enemy.distance += enemy.speed * enemy.slowFactor * globalFactor * dt;
 
         if (enemy.distance >= totalPathLength) {
           enemy.alive = false;
           lives--;
+          score = Math.max(0, score - 20);
+          playTone(180, 0.1, "sawtooth", 0.02);
 
           if (lives <= 0) {
             lives = 0;
@@ -677,7 +1487,6 @@
 
       for (const tower of towers) {
         tower.cooldown -= dt;
-
         if (tower.cooldown <= 0) {
           const target = findTarget(tower);
           if (target) {
@@ -692,7 +1501,6 @@
               slow: tower.slow,
               slowTime: tower.slowTime
             });
-
             tower.cooldown = tower.fireRate;
           }
         }
@@ -720,13 +1528,14 @@
 
       bullets = bullets.filter(b => !b.dead);
 
-      if (gameOver) {
-        startWaveBtn.disabled = true;
+      for (const p of particles) {
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.vx *= 0.96;
+        p.vy *= 0.96;
+        p.life -= dt;
       }
-
-      if (victory) {
-        startWaveBtn.disabled = true;
-      }
+      particles = particles.filter(p => p.life > 0);
 
       updateUI();
     }
@@ -788,6 +1597,18 @@
       }
     }
 
+    function drawSelectedTowerRange() {
+      if (!selectedPlacedTower) return;
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(selectedPlacedTower.x, selectedPlacedTower.y, selectedPlacedTower.range, 0, Math.PI * 2);
+      ctx.strokeStyle = "rgba(37, 99, 235, 0.35)";
+      ctx.lineWidth = 2;
+      ctx.setLineDash([8, 6]);
+      ctx.stroke();
+      ctx.restore();
+    }
+
     function drawTowers() {
       for (const tower of towers) {
         ctx.fillStyle = tower.color;
@@ -795,16 +1616,21 @@
         ctx.arc(tower.x, tower.y, tower.size, 0, Math.PI * 2);
         ctx.fill();
 
+        if (tower === selectedPlacedTower) {
+          ctx.strokeStyle = "#111827";
+          ctx.lineWidth = 3;
+          ctx.stroke();
+        }
+
         ctx.fillStyle = "#ffffff";
         ctx.font = "bold 12px Microsoft YaHei";
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
+        ctx.fillText(tower.label, tower.x, tower.y + 1);
 
-        const label =
-          tower.type === "lamp" ? "灯" :
-          tower.type === "coffee" ? "咖" : "书";
-
-        ctx.fillText(label, tower.x, tower.y + 1);
+        ctx.fillStyle = "#0f172a";
+        ctx.font = "bold 10px Microsoft YaHei";
+        ctx.fillText(`Lv${tower.level}`, tower.x, tower.y - tower.size - 10);
       }
     }
 
@@ -827,12 +1653,15 @@
         ctx.fillStyle = "#ffffff";
         ctx.font = "bold 11px Microsoft YaHei";
         ctx.textAlign = "center";
-        ctx.fillText(
-          enemy.type === "normal" ? "拖" :
-          enemy.type === "fast" ? "夜" : "截",
-          enemy.x,
-          enemy.y + 1
-        );
+        ctx.fillText(enemy.label, enemy.x, enemy.y + 1);
+
+        if (enemy.slowTimer > 0 || globalSlowTimer > 0) {
+          ctx.strokeStyle = "#7c3aed";
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(enemy.x, enemy.y, enemy.radius + 4, 0, Math.PI * 2);
+          ctx.stroke();
+        }
       }
     }
 
@@ -845,30 +1674,48 @@
       }
     }
 
-    function drawOverlay() {
-      if (!gameOver && !victory) return;
+    function drawParticles() {
+      for (const p of particles) {
+        const alpha = Math.max(0, p.life / p.maxLife);
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+    }
 
-      ctx.fillStyle = "rgba(15, 23, 42, 0.55)";
+    function drawPauseOverlay() {
+      if (!gamePaused || gameOver || victory || !gameStarted) return;
+      ctx.fillStyle = "rgba(15, 23, 42, 0.42)";
       ctx.fillRect(0, 0, WIDTH, HEIGHT);
-
       ctx.fillStyle = "#ffffff";
       ctx.textAlign = "center";
-      ctx.font = "bold 42px Microsoft YaHei";
-      ctx.fillText(victory ? "胜利！" : "失败！", WIDTH / 2, HEIGHT / 2 - 10);
+      ctx.font = "bold 40px Microsoft YaHei";
+      ctx.fillText("暂停中", WIDTH / 2, HEIGHT / 2 - 10);
+      ctx.font = "18px Microsoft YaHei";
+      ctx.fillText("点击“继续游戏”恢复战斗", WIDTH / 2, HEIGHT / 2 + 28);
+    }
 
-      ctx.font = "20px Microsoft YaHei";
-      ctx.fillText(victory ? "宿舍守住了！" : "宿舍失守了！", WIDTH / 2, HEIGHT / 2 + 34);
+    function drawSkillFlash() {
+      if (skillFlashTimer <= 0) return;
+      const alpha = skillFlashTimer / 0.35;
+      ctx.fillStyle = `rgba(124, 58, 237, ${0.18 * alpha})`;
+      ctx.fillRect(0, 0, WIDTH, HEIGHT);
     }
 
     function draw() {
       ctx.clearRect(0, 0, WIDTH, HEIGHT);
-
       drawPath();
       drawTowerSpots();
+      drawSelectedTowerRange();
       drawTowers();
       drawEnemies();
       drawBullets();
-      drawOverlay();
+      drawParticles();
+      drawSkillFlash();
+      drawPauseOverlay();
     }
 
     function gameLoop(timestamp) {
@@ -882,66 +1729,109 @@
       requestAnimationFrame(gameLoop);
     }
 
-    canvas.addEventListener("click", (e) => {
-      if (gameOver || victory) return;
-      if (!selectedTowerType) {
+    function tryPlaceTower(spot) {
+      const type = towerTypes[selectedTowerType];
+      if (!type) {
         setLog("请先选择一个塔。");
         return;
       }
+      if (spot.tower) {
+        setLog("这个位置已经有塔了。");
+        return;
+      }
+      if (gold < type.cost) {
+        setLog("金币不足，无法放置这个塔。");
+        return;
+      }
+
+      gold -= type.cost;
+      const tower = createTower(selectedTowerType, spot.x, spot.y);
+      tower.spotRef = spot;
+      towers.push(tower);
+      spot.tower = tower;
+      selectedPlacedTower = tower;
+      score += 10;
+      spawnParticles(tower.x, tower.y, tower.color, 8, 80, 0.35);
+      playTone(560, 0.06, "triangle", 0.018);
+      setLog(`已放置 ${tower.name}。`);
+      updateUI();
+    }
+
+    canvas.addEventListener("click", (e) => {
+      if (!gameStarted || gameOver || victory) return;
 
       const rect = canvas.getBoundingClientRect();
       const scaleX = WIDTH / rect.width;
       const scaleY = HEIGHT / rect.height;
-
       const mx = (e.clientX - rect.left) * scaleX;
       const my = (e.clientY - rect.top) * scaleY;
 
       for (const spot of towerSpots) {
         const d = Math.hypot(mx - spot.x, my - spot.y);
-
         if (d <= 20) {
           if (spot.tower) {
-            setLog("这个位置已经有塔了。");
+            selectedPlacedTower = spot.tower;
+            selectedTowerType = null;
+            lampBtn.classList.remove("active");
+            coffeeBtn.classList.remove("active");
+            bookBtn.classList.remove("active");
+            playTone(480, 0.05, "triangle", 0.015);
+            setLog(`已选中 ${spot.tower.name}。`);
+            refreshSelectedTowerInfo();
+            return;
+          } else {
+            tryPlaceTower(spot);
             return;
           }
-
-          const t = towerTypes[selectedTowerType];
-          if (gold < t.cost) {
-            setLog("金币不足，无法放置这个塔。");
-            return;
-          }
-
-          gold -= t.cost;
-          const tower = createTower(selectedTowerType, spot.x, spot.y);
-          towers.push(tower);
-          spot.tower = tower;
-          setLog(`已放置${t.name}。`);
-          updateUI();
-          return;
         }
       }
 
-      setLog("请点击地图上的圆形空位放塔。");
+      selectedPlacedTower = null;
+      refreshSelectedTowerInfo();
+      if (!selectedTowerType) {
+        setLog("请点击地图圆形空位放塔，或点击已放置的塔查看信息。");
+      }
     });
+
+    difficultyButtons.forEach(btn => {
+      btn.addEventListener("click", () => setDifficulty(btn.dataset.difficulty));
+    });
+
+    globalRankTab.addEventListener("click", () => setRankMode("global"));
+    difficultyRankTab.addEventListener("click", () => setRankMode("difficulty"));
+    resultGlobalRankTab.addEventListener("click", () => setResultRankMode("global"));
+    resultDifficultyRankTab.addEventListener("click", () => setResultRankMode("difficulty"));
 
     lampBtn.addEventListener("click", () => setActiveTowerButton("lamp"));
     coffeeBtn.addEventListener("click", () => setActiveTowerButton("coffee"));
     bookBtn.addEventListener("click", () => setActiveTowerButton("book"));
 
-    startWaveBtn.addEventListener("click", () => {
-      if (waveIndex === waves.length - 1 && !waveActive) {
-        setLog("已经是最后一波了。");
-        return;
-      }
-      startNextWave();
-    });
-
+    startWaveBtn.addEventListener("click", startNextWave);
+    pauseBtn.addEventListener("click", togglePause);
     restartBtn.addEventListener("click", () => {
+      if (!gameStarted) return;
       resetGame();
     });
+    upgradeBtn.addEventListener("click", upgradeTower);
+    sellBtn.addEventListener("click", sellTower);
+    skillBtn.addEventListener("click", castSkill);
+    soundBtn.addEventListener("click", toggleSound);
+
+    startGameBtn.addEventListener("click", startGame);
+    playAgainBtn.addEventListener("click", () => {
+      resultOverlay.classList.add("hidden");
+      gameStarted = true;
+      resetGame();
+    });
+    backTitleBtn.addEventListener("click", backToTitle);
 
     buildPathData();
+    setDifficulty("easy");
+    setRankMode("global");
+    setResultRankMode("global");
+    updateSoundButton();
     resetGame();
+    refreshLeaderboards();
     requestAnimationFrame(gameLoop);
   </script>
 </body>
