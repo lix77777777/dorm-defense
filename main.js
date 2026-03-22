@@ -15,7 +15,6 @@ const skillCdText = document.getElementById("skillCdText");
 const scoreText = document.getElementById("scoreText");
 const mapText = document.getElementById("mapText");
 const logBox = document.getElementById("logBox");
-const descBox = document.getElementById("descBox");
 const selectedTowerInfo = document.getElementById("selectedTowerInfo");
 const wavePreviewBox = document.getElementById("wavePreviewBox");
 const mapInfoBox = document.getElementById("mapInfoBox");
@@ -132,62 +131,48 @@ function validateNickname(name) {
   return trimmed.length >= 1 && trimmed.length <= 20;
 }
 
-async function handleGameEnd(result) {
-  lastResult = result;
-
-  resultTitle.textContent = result.victory ? "胜利！" : "失败！";
-  resultSubtitle.textContent = result.victory ? "你成功守住了终点。" : "防线被突破了。";
-  resultBox.textContent =
-`玩家：${playerNickname}
-难度：${result.difficultyLabel}
-地图：${result.mapLabel}
-最终波次：${result.wave} / ${result.totalWaves}
-剩余基地血量：${result.lives}
-剩余金币：${result.gold}
-已放置防御塔：${result.towersCount}
-本局分数：${result.score}
-
-${result.victory ? "干得漂亮，你守住了最后一波。" : "别灰心，调整塔的位置和升级顺序再试一次。"}`;
-
-  resultOverlay.classList.remove("hidden");
-
-  if (!scoreSubmitted && result.score > 0 && validateNickname(playerNickname)) {
-    scoreSubmitted = true;
-    resultLeaderboardStatus.textContent = "正在提交分数...";
-    try {
-      lastSubmittedDocId = await submitScore({
-        nickname: playerNickname,
-        score: result.score,
-        wave: result.wave,
-        difficulty: result.difficulty,
-        map: result.map
-      });
-      resultLeaderboardStatus.textContent = "成绩已提交到全球排行榜。";
-    } catch (err) {
-      console.error(err);
-      resultLeaderboardStatus.textContent = "成绩提交失败，请检查 Firestore 规则或网络。";
-    }
+function calcStars(result) {
+  const maxLives = difficulties[result.difficulty].startLives;
+  if (!result.victory) {
+    if (result.wave >= result.totalWaves) return 1;
+    if (result.wave >= result.totalWaves - 1) return 1;
+    return 0;
   }
 
-  await refreshLeaderboards();
+  if (result.lives >= Math.ceil(maxLives * 0.65)) return 3;
+  if (result.lives >= 1) return 2;
+  return 1;
+}
+
+function starText(stars) {
+  return "★".repeat(stars) + "☆".repeat(3 - stars);
 }
 
 function sortLeaderboard(list) {
   return [...list].sort((a, b) => {
-    if (b.score !== a.score) return b.score - a.score;
+    if ((b.score || 0) !== (a.score || 0)) return (b.score || 0) - (a.score || 0);
     if ((b.wave || 0) !== (a.wave || 0)) return (b.wave || 0) - (a.wave || 0);
-    return (a.createdAt || 0) - (b.createdAt || 0);
+    return 0;
   });
 }
 
-function renderLeaderboardTo(container, mode) {
+function getFilteredLeaderboard(mode) {
   let list = sortLeaderboard(leaderboardCache);
-
   if (mode === "difficulty") {
     list = list.filter(item => item.difficulty === currentDifficulty);
   }
+  return list;
+}
 
-  list = list.slice(0, 20);
+function getRankInfo(mode, docId) {
+  if (!docId) return null;
+  const list = getFilteredLeaderboard(mode);
+  const index = list.findIndex(item => item.id === docId);
+  return index >= 0 ? index + 1 : null;
+}
+
+function renderLeaderboardTo(container, mode) {
+  let list = getFilteredLeaderboard(mode).slice(0, 20);
 
   if (!list.length) {
     container.innerHTML = "暂无记录。";
@@ -199,7 +184,7 @@ function renderLeaderboardTo(container, mode) {
       <div class="rank-index">#${idx + 1}</div>
       <div>
         <div class="rank-name">${escapeHTML(item.nickname)}${item.id === lastSubmittedDocId ? "（你）" : ""}</div>
-        <div class="rank-meta">${difficulties[item.difficulty]?.label || item.difficulty} · ${maps[item.map]?.label || item.map || "未知地图"} · 波次 ${item.wave || 0}</div>
+        <div class="rank-meta">${difficulties[item.difficulty]?.label || item.difficulty} · 波次 ${item.wave || 0}</div>
       </div>
       <div class="rank-score">${item.score || 0}</div>
     </div>
@@ -213,16 +198,20 @@ function renderLeaderboards() {
 
 async function refreshLeaderboards() {
   leaderboardStatus.textContent = "正在刷新排行榜...";
-  resultLeaderboardStatus.textContent = resultLeaderboardStatus.textContent || "正在刷新排行榜...";
+  resultLeaderboardStatus.textContent = "正在刷新排行榜...";
 
   try {
-    leaderboardCache = await fetchLeaderboard(100);
+    leaderboardCache = await fetchLeaderboard(200);
     renderLeaderboards();
+
+    const globalRank = getRankInfo("global", lastSubmittedDocId);
+    const difficultyRank = getRankInfo("difficulty", lastSubmittedDocId);
+
     leaderboardStatus.textContent = "全球排行榜已更新。";
-    if (!lastResult) {
-      resultLeaderboardStatus.textContent = "排行榜已更新。";
-    } else if (lastSubmittedDocId) {
-      resultLeaderboardStatus.textContent = "成绩已同步，排行榜已更新。";
+
+    if (lastSubmittedDocId) {
+      resultLeaderboardStatus.textContent =
+        `你的全球排名：${globalRank ? "#" + globalRank : "200+"} ｜ 当前难度排名：${difficultyRank ? "#" + difficultyRank : "200+"}`;
     } else {
       resultLeaderboardStatus.textContent = "排行榜已更新。";
     }
@@ -247,6 +236,46 @@ function setResultRankMode(mode) {
   resultGlobalRankTab.classList.toggle("active", mode === "global");
   resultDifficultyRankTab.classList.toggle("active", mode === "difficulty");
   renderLeaderboards();
+}
+
+async function handleGameEnd(result) {
+  lastResult = result;
+  const stars = calcStars(result);
+
+  resultTitle.textContent = result.victory ? "胜利！" : "失败！";
+  resultSubtitle.textContent = result.victory ? "你成功守住了终点。" : "防线被突破了。";
+  resultBox.textContent =
+`评级：${starText(stars)}
+玩家：${playerNickname}
+难度：${result.difficultyLabel}
+地图：${result.mapLabel}
+最终波次：${result.wave} / ${result.totalWaves}
+剩余基地血量：${result.lives}
+剩余金币：${result.gold}
+已放置防御塔：${result.towersCount}
+本局分数：${result.score}
+
+${result.victory ? "干得漂亮，你守住了最后一波。" : "别灰心，调整塔的位置和升级顺序再试一次。"}`;
+
+  resultOverlay.classList.remove("hidden");
+
+  if (!scoreSubmitted && result.score > 0 && validateNickname(playerNickname)) {
+    scoreSubmitted = true;
+    resultLeaderboardStatus.textContent = "正在提交分数...";
+    try {
+      lastSubmittedDocId = await submitScore({
+        nickname: playerNickname,
+        score: result.score,
+        wave: result.wave,
+        difficulty: result.difficulty
+      });
+    } catch (err) {
+      console.error(err);
+      resultLeaderboardStatus.textContent = "成绩提交失败，请检查 Firestore 规则或网络。";
+    }
+  }
+
+  await refreshLeaderboards();
 }
 
 lampBtn.addEventListener("click", () => game.setSelectedTowerType("lamp"));
