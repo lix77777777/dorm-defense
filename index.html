@@ -114,9 +114,20 @@
       <p>输入昵称，选择难度和地图，守住终点，冲击全球排行榜。</p>
 
       <div class="nickname-box">
-        <div class="box-title">玩家昵称</div>
-        <input id="nicknameInput" class="nickname-input" maxlength="20" placeholder="输入昵称，例如 Lee" />
+        <div class="box-title">账号</div>
+        <input id="nicknameInput" class="nickname-input" maxlength="20" placeholder="注册时填写固定昵称（登录时可留空）" />
+        <input id="emailInput" class="nickname-input" style="margin-top:10px;" placeholder="邮箱，例如 test@example.com" />
+        <input id="passwordInput" class="nickname-input" type="password" style="margin-top:10px;" placeholder="密码（至少 6 位）" />
       </div>
+
+      <div class="modal-actions">
+        <button class="modal-btn secondary" id="registerBtn">注册</button>
+        <button class="modal-btn secondary" id="loginBtn">登录</button>
+        <button class="modal-btn secondary" id="logoutBtn">退出登录</button>
+        <button class="modal-btn" id="startGameBtn">开始游戏</button>
+      </div>
+
+<div class="status-box" id="authStatus">未登录，请先注册或登录。</div>
 
       <div class="difficulty-row">
         <button class="difficulty-btn active" data-difficulty="easy">简单</button>
@@ -134,9 +145,7 @@
       <div class="modal-box" id="mapSelectInfo">宿舍区：路线平衡，适合标准布局。</div>
       <div class="modal-box" id="saveSummaryBox">局外金币：0</div>
 
-      <div class="modal-actions">
-        <button class="modal-btn" id="startGameBtn">开始游戏</button>
-      </div>
+      
 
       <div class="rank-tab-row">
         <button class="rank-tab active" id="globalRankTab">全球总榜</button>
