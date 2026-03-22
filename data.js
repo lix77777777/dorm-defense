@@ -7,30 +7,30 @@ export const ROAD_INNER_WIDTH = 18;
 export const difficulties = {
   easy: {
     label: "简单",
-    startGold: 270,
-    startLives: 8,
-    enemyHpMul: 1.02,
-    enemySpeedMul: 1.02,
-    rewardMul: 1.0,
-    desc: "简单：也需要认真放塔，但容错更高。"
+    startGold: 320,
+    startLives: 10,
+    enemyHpMul: 0.95,
+    enemySpeedMul: 0.96,
+    rewardMul: 1.05,
+    desc: "简单：适合第一次玩，容错更高。"
   },
   normal: {
     label: "普通",
-    startGold: 210,
-    startLives: 6,
-    enemyHpMul: 1.16,
-    enemySpeedMul: 1.10,
-    rewardMul: 0.98,
-    desc: "普通：资源更紧，敌人更硬更快。"
+    startGold: 250,
+    startLives: 7,
+    enemyHpMul: 1.05,
+    enemySpeedMul: 1.04,
+    rewardMul: 1.0,
+    desc: "普通：有压力，但整体可过。"
   },
   hard: {
     label: "困难",
-    startGold: 170,
-    startLives: 4,
-    enemyHpMul: 1.30,
-    enemySpeedMul: 1.16,
-    rewardMul: 0.95,
-    desc: "困难：站位、升级和技能时机都要更精准。"
+    startGold: 210,
+    startLives: 5,
+    enemyHpMul: 1.15,
+    enemySpeedMul: 1.10,
+    rewardMul: 0.98,
+    desc: "困难：需要更合理的布局和升级节奏。"
   }
 };
 
@@ -92,32 +92,31 @@ export const maps = {
   },
 
   lab: {
-    label: "实验楼",
-    desc: "实验楼：转角多，减速塔和交叉火力更重要。",
-    path: [
-      { x: 0, y: 260 },
-      { x: 180, y: 260 },
-      { x: 180, y: 80 },
-      { x: 360, y: 80 },
-      { x: 360, y: 450 },
-      { x: 560, y: 450 },
-      { x: 560, y: 160 },
-      { x: 760, y: 160 },
-      { x: 760, y: 320 },
-      { x: 900, y: 320 }
-    ],
-    spots: [
-      { x: 95, y: 180 },
-      { x: 95, y: 340 },
-      { x: 280, y: 160 },
-      { x: 280, y: 360 },
-      { x: 455, y: 185 },
-      { x: 455, y: 505 },
-      { x: 650, y: 350 },
-      { x: 650, y: 90 },
-      { x: 835, y: 220 },
-      { x: 835, y: 395 }
-    ]
+  label: "实验楼",
+  desc: "实验楼：转角多，减速塔和交叉火力更重要。",
+  path: [
+    { x: 0, y: 260 },
+    { x: 180, y: 260 },
+    { x: 180, y: 80 },
+    { x: 360, y: 80 },
+    { x: 360, y: 450 },
+    { x: 560, y: 450 },
+    { x: 560, y: 160 },
+    { x: 760, y: 160 },
+    { x: 760, y: 320 },
+    { x: 900, y: 320 }
+  ],
+  spots: [
+    { x: 70, y: 185 },
+    { x: 70, y: 335 },
+    { x: 260, y: 160 },
+    { x: 260, y: 350 },
+    { x: 430, y: 185 },
+    { x: 430, y: 500 },
+    { x: 640, y: 330 },
+    { x: 640, y: 95 },
+    { x: 815, y: 220 },
+    { x: 815, y: 385 }
   }
 };
 
@@ -169,54 +168,54 @@ export const towerTypes = {
 export const enemyTypes = {
   normal: {
     name: "拖延怪",
-    hp: 48,
-    speed: 86,
-    reward: 18,
+    hp: 42,
+    speed: 82,
+    reward: 20,
     color: "#3b82f6",
     radius: 14,
     label: "拖"
   },
   fast: {
     name: "熬夜怪",
-    hp: 34,
-    speed: 138,
-    reward: 16,
+    hp: 30,
+    speed: 128,
+    reward: 18,
     color: "#f59e0b",
     radius: 12,
     label: "夜"
   },
   tank: {
     name: "截止日怪",
-    hp: 118,
-    speed: 62,
-    reward: 32,
+    hp: 102,
+    speed: 58,
+    reward: 34,
     color: "#ef4444",
     radius: 17,
     label: "截"
   },
   rush: {
     name: "冲刺怪",
-    hp: 24,
-    speed: 182,
-    reward: 14,
+    hp: 20,
+    speed: 165,
+    reward: 16,
     color: "#8b5cf6",
     radius: 10,
     label: "冲"
   },
   elite: {
     name: "精英怪",
-    hp: 155,
-    speed: 78,
-    reward: 44,
+    hp: 135,
+    speed: 72,
+    reward: 46,
     color: "#111827",
     radius: 18,
     label: "精"
   },
   boss: {
     name: "院长怪",
-    hp: 430,
-    speed: 56,
-    reward: 120,
+    hp: 300,
+    speed: 50,
+    reward: 110,
     color: "#7c2d12",
     radius: 24,
     label: "王"
@@ -224,12 +223,12 @@ export const enemyTypes = {
 };
 
 export const waves = [
-  ["normal", "normal", "rush", "rush", "fast", "normal"],
-  ["normal", "fast", "rush", "fast", "normal", "rush", "fast"],
-  ["normal", "fast", "tank", "rush", "rush", "normal", "fast"],
-  ["tank", "normal", "fast", "elite", "rush", "normal", "fast"],
-  ["tank", "fast", "tank", "rush", "elite", "fast", "tank"],
-  ["tank", "elite", "fast", "rush", "tank", "fast", "normal", "rush"],
-  ["elite", "tank", "rush", "fast", "elite", "normal", "fast", "tank"],
-  ["elite", "tank", "boss", "rush", "fast", "tank", "elite"]
+  ["normal", "normal", "rush", "fast", "normal"],
+  ["normal", "fast", "rush", "fast", "normal", "normal"],
+  ["normal", "fast", "tank", "rush", "normal", "fast"],
+  ["tank", "normal", "fast", "elite", "rush", "normal"],
+  ["tank", "fast", "tank", "rush", "elite", "fast"],
+  ["tank", "elite", "fast", "rush", "tank", "normal", "rush"],
+  ["elite", "tank", "rush", "fast", "elite", "normal", "tank"],
+  ["boss", "fast", "tank", "elite", "rush", "fast"]
 ];
