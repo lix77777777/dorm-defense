@@ -1,4 +1,4 @@
-import { difficulties, maps, towerTypes } from "./data.js";
+import { difficulties, maps, towerTypes, enemyTypes } from "./data.js";
 import {
   submitScore,
   fetchLeaderboard,
@@ -9,7 +9,19 @@ import {
   getCurrentNickname
 } from "./firebase.js";
 import { Game } from "./game.js";
-import { loadSave, addMetaCoins, setStars, getStars, unlockRequirements } from "./save.js";
+import {
+  loadSave,
+  addMetaCoins,
+  setStars,
+  getStars,
+  unlockRequirements,
+  achievementList,
+  getAchievementProgress,
+  getUnlockedAchievements,
+  unlockAchievement,
+  getBestScore,
+  setBestScore
+} from "./save.js";
 
 const game = new Game(document.getElementById("gameCanvas"), {
   onUpdate: handleGameUpdate,
@@ -45,9 +57,13 @@ const soundBtn = document.getElementById("soundBtn");
 
 const startOverlay = document.getElementById("startOverlay");
 const resultOverlay = document.getElementById("resultOverlay");
+const codexOverlay = document.getElementById("codexOverlay");
+
 const startGameBtn = document.getElementById("startGameBtn");
 const playAgainBtn = document.getElementById("playAgainBtn");
 const backTitleBtn = document.getElementById("backTitleBtn");
+const codexBtn = document.getElementById("codexBtn");
+const closeCodexBtn = document.getElementById("closeCodexBtn");
 
 const registerBtn = document.getElementById("registerBtn");
 const loginBtn = document.getElementById("loginBtn");
@@ -56,12 +72,14 @@ const logoutBtn = document.getElementById("logoutBtn");
 const difficultyInfo = document.getElementById("difficultyInfo");
 const mapSelectInfo = document.getElementById("mapSelectInfo");
 const saveSummaryBox = document.getElementById("saveSummaryBox");
+const achievementSummaryBox = document.getElementById("achievementSummaryBox");
 const difficultyButtons = [...document.querySelectorAll(".difficulty-btn")];
 const mapButtons = [...document.querySelectorAll(".map-btn")];
 const nicknameInput = document.getElementById("nicknameInput");
 const emailInput = document.getElementById("emailInput");
 const passwordInput = document.getElementById("passwordInput");
 const authStatus = document.getElementById("authStatus");
+const codexContent = document.getElementById("codexContent");
 
 const leaderboardBox = document.getElementById("leaderboardBox");
 const leaderboardStatus = document.getElementById("leaderboardStatus");
@@ -190,6 +208,7 @@ function updateTowerButtons() {
 function updateSaveSummary() {
   const save = loadSave();
   const stars = getStars(currentMap, currentDifficulty);
+  const bestScore = getBestScore(currentMap, currentDifficulty);
   const unlocked = Object.entries(save.unlocks)
     .filter(([, v]) => v)
     .map(([k]) => towerTypes[k].name)
@@ -198,11 +217,77 @@ function updateSaveSummary() {
   saveSummaryBox.textContent =
 `局外金币：${save.metaCoins}
 当前地图星级：${"★".repeat(stars)}${"☆".repeat(3 - stars)}
+当前地图最高分：${bestScore}
 已解锁防御塔：${unlocked}
 
 解锁条件：
 范围塔：${unlockRequirements.bomb} 金币
 狙击塔：${unlockRequirements.sniper} 金币`;
+}
+
+function updateAchievementSummary() {
+  const progress = getAchievementProgress();
+  const unlocked = getUnlockedAchievements().map(a => a.title).slice(-3);
+
+  achievementSummaryBox.textContent =
+`成就进度：${progress.unlocked} / ${progress.total}
+${unlocked.length ? "最近已达成：" + unlocked.join("、") : "还没有达成成就，继续挑战吧。"}`;
+}
+
+function buildCodexHTML() {
+  const save = loadSave();
+
+  const towerHtml = Object.entries(towerTypes).map(([key, tower]) => {
+    const unlocked = !!save.unlocks[key];
+    return `
+      <div style="padding:10px 0;border-bottom:1px solid #e5e7eb;">
+        <div style="font-weight:900;">${tower.name}${unlocked ? "" : "（未解锁）"}</div>
+        <div>花费：${tower.cost}</div>
+        <div>${tower.description}</div>
+      </div>
+    `;
+  }).join("");
+
+  const enemyHtml = Object.values(enemyTypes).map(enemy => `
+    <div style="padding:10px 0;border-bottom:1px solid #e5e7eb;">
+      <div style="font-weight:900;">${enemy.name}</div>
+      <div>血量：${enemy.hp} ｜ 速度：${enemy.speed}</div>
+      <div>${enemy.desc || ""}</div>
+    </div>
+  `).join("");
+
+  const mapHtml = Object.values(maps).map(map => `
+    <div style="padding:10px 0;border-bottom:1px solid #e5e7eb;">
+      <div style="font-weight:900;">${map.label}</div>
+      <div>${map.desc}</div>
+      <div>${map.effectText || ""}</div>
+    </div>
+  `).join("");
+
+  const achievementHtml = achievementList.map(a => {
+    const unlocked = save.achievements[a.key];
+    return `
+      <div style="padding:10px 0;border-bottom:1px solid #e5e7eb;">
+        <div style="font-weight:900;">${a.title}${unlocked ? "（已达成）" : "（未达成）"}</div>
+        <div>${a.desc}</div>
+      </div>
+    `;
+  }).join("");
+
+  return `
+    <div style="font-weight:900;font-size:18px;margin-bottom:8px;">防御塔</div>
+    ${towerHtml}
+    <div style="font-weight:900;font-size:18px;margin:18px 0 8px;">敌人</div>
+    ${enemyHtml}
+    <div style="font-weight:900;font-size:18px;margin:18px 0 8px;">地图效果</div>
+    ${mapHtml}
+    <div style="font-weight:900;font-size:18px;margin:18px 0 8px;">成就</div>
+    ${achievementHtml}
+  `;
+}
+
+function updateCodex() {
+  codexContent.innerHTML = buildCodexHTML();
 }
 
 function updateAuthUI(user) {
@@ -211,12 +296,8 @@ function updateAuthUI(user) {
 
   if (user) {
     authStatus.textContent = `已登录：${playerNickname || "未命名用户"}（${user.email || ""}）`;
-    if (playerNickname) {
-      nicknameInput.value = playerNickname;
-    }
-    if (user.email) {
-      emailInput.value = user.email;
-    }
+    if (playerNickname) nicknameInput.value = playerNickname;
+    if (user.email) emailInput.value = user.email;
     startGameBtn.disabled = false;
   } else {
     authStatus.textContent = "未登录，请先注册或登录。";
@@ -279,7 +360,7 @@ function setMap(mapKey) {
   mapButtons.forEach(btn => {
     btn.classList.toggle("active", btn.dataset.map === mapKey);
   });
-  mapSelectInfo.textContent = maps[mapKey].desc;
+  mapSelectInfo.textContent = `${maps[mapKey].desc}\n${maps[mapKey].effectText || ""}`;
   game.setMap(mapKey);
   updateSaveSummary();
 }
@@ -358,11 +439,24 @@ async function handleGameEnd(result) {
   const reward = calcMetaReward(result, stars);
 
   setStars(result.map, result.difficulty, stars);
+  setBestScore(result.map, result.difficulty, result.score);
   const afterSave = addMetaCoins(reward);
 
-  const unlockedNew = [];
-  if (!beforeSave.unlocks.bomb && afterSave.unlocks.bomb) unlockedNew.push("范围塔");
-  if (!beforeSave.unlocks.sniper && afterSave.unlocks.sniper) unlockedNew.push("狙击塔");
+  const newlyUnlocked = [];
+  if (!beforeSave.unlocks.bomb && afterSave.unlocks.bomb) newlyUnlocked.push("范围塔");
+  if (!beforeSave.unlocks.sniper && afterSave.unlocks.sniper) newlyUnlocked.push("狙击塔");
+
+  const newlyAchievements = [];
+  if (result.victory && unlockAchievement("first_win")) newlyAchievements.push("初次胜利");
+  if (result.stats.bossKills > 0 && unlockAchievement("boss_slayer")) newlyAchievements.push("Boss 终结者");
+  if (result.victory && result.difficulty === "hard" && unlockAchievement("hard_win")) newlyAchievements.push("困难征服者");
+  if (result.victory && result.stats.towersSold === 0 && unlockAchievement("no_sell_win")) newlyAchievements.push("稳健经营");
+  if (result.victory && result.stats.towersBuilt <= 5 && unlockAchievement("small_team_win")) newlyAchievements.push("精简布阵");
+
+  const newestSave = loadSave();
+  if (newestSave.unlocks.bomb && newestSave.unlocks.sniper && unlockAchievement("arsenal_master")) {
+    newlyAchievements.push("军火大师");
+  }
 
   resultTitle.textContent = result.victory ? "胜利！" : "失败！";
   resultSubtitle.textContent = result.victory ? "你成功守住了终点。" : "防线被突破了。";
@@ -375,16 +469,22 @@ async function handleGameEnd(result) {
 最终波次：${result.wave} / ${result.totalWaves}
 剩余基地血量：${result.lives}
 剩余金币：${result.gold}
-已放置防御塔：${result.towersCount}
+击杀数：${result.stats.kills}
+建塔数：${result.stats.towersBuilt}
+卖塔数：${result.stats.towersSold}
+技能次数：${result.stats.skillsUsed}
 本局分数：${result.score}
 获得局外金币：${reward}
 
-${unlockedNew.length ? "新解锁：" + unlockedNew.join("、") : "本次没有新解锁。"}
+${newlyUnlocked.length ? "新解锁：" + newlyUnlocked.join("、") : "本次没有新解锁。"}
+${newlyAchievements.length ? "新成就：" + newlyAchievements.join("、") : "本次没有新成就。"}
 ${result.victory ? "干得漂亮，你守住了最后一波。" : "别灰心，调整塔的位置和升级顺序再试一次。"}`;
 
   resultOverlay.classList.remove("hidden");
   updateSaveSummary();
+  updateAchievementSummary();
   updateTowerButtons();
+  updateCodex();
 
   if (!scoreSubmitted && result.score > 0 && currentUser && playerNickname) {
     scoreSubmitted = true;
@@ -505,6 +605,15 @@ difficultyRankTab.addEventListener("click", () => setRankMode("difficulty"));
 resultGlobalRankTab.addEventListener("click", () => setResultRankMode("global"));
 resultDifficultyRankTab.addEventListener("click", () => setResultRankMode("difficulty"));
 
+codexBtn.addEventListener("click", () => {
+  updateCodex();
+  codexOverlay.classList.remove("hidden");
+});
+
+closeCodexBtn.addEventListener("click", () => {
+  codexOverlay.classList.add("hidden");
+});
+
 startGameBtn.addEventListener("click", () => {
   if (!currentUser) {
     authStatus.textContent = "请先注册或登录，再开始游戏。";
@@ -523,6 +632,7 @@ startGameBtn.addEventListener("click", () => {
 
   startOverlay.classList.add("hidden");
   resultOverlay.classList.add("hidden");
+  codexOverlay.classList.add("hidden");
   game.startNewGame();
 });
 
@@ -544,7 +654,9 @@ backTitleBtn.addEventListener("click", async () => {
   lastResult = null;
   scoreSubmitted = false;
   updateSaveSummary();
+  updateAchievementSummary();
   updateTowerButtons();
+  updateCodex();
   await refreshLeaderboards();
 });
 
@@ -557,5 +669,7 @@ setMap("dorm");
 setRankMode("global");
 setResultRankMode("global");
 updateSaveSummary();
+updateAchievementSummary();
 updateTowerButtons();
+updateCodex();
 refreshLeaderboards();
