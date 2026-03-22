@@ -1,5 +1,13 @@
 import { difficulties, maps, towerTypes } from "./data.js";
-import { submitScore, fetchLeaderboard } from "./firebase.js";
+import {
+  submitScore,
+  fetchLeaderboard,
+  registerUser,
+  loginUser,
+  logoutUser,
+  watchAuth,
+  getCurrentNickname
+} from "./firebase.js";
 import { Game } from "./game.js";
 import { loadSave, addMetaCoins, setStars, getStars, unlockRequirements } from "./save.js";
 
@@ -41,12 +49,19 @@ const startGameBtn = document.getElementById("startGameBtn");
 const playAgainBtn = document.getElementById("playAgainBtn");
 const backTitleBtn = document.getElementById("backTitleBtn");
 
+const registerBtn = document.getElementById("registerBtn");
+const loginBtn = document.getElementById("loginBtn");
+const logoutBtn = document.getElementById("logoutBtn");
+
 const difficultyInfo = document.getElementById("difficultyInfo");
 const mapSelectInfo = document.getElementById("mapSelectInfo");
 const saveSummaryBox = document.getElementById("saveSummaryBox");
 const difficultyButtons = [...document.querySelectorAll(".difficulty-btn")];
 const mapButtons = [...document.querySelectorAll(".map-btn")];
 const nicknameInput = document.getElementById("nicknameInput");
+const emailInput = document.getElementById("emailInput");
+const passwordInput = document.getElementById("passwordInput");
+const authStatus = document.getElementById("authStatus");
 
 const leaderboardBox = document.getElementById("leaderboardBox");
 const leaderboardStatus = document.getElementById("leaderboardStatus");
@@ -66,6 +81,8 @@ let currentDifficulty = "easy";
 let currentMap = "dorm";
 
 let playerNickname = "";
+let currentUser = null;
+
 let leaderboardCache = [];
 let lastSubmittedDocId = null;
 let rankMode = "global";
@@ -94,111 +111,8 @@ function validateNickname(name) {
   return trimmed.length >= 1 && trimmed.length <= 20;
 }
 
-function setDifficulty(diff) {
-  currentDifficulty = diff;
-  difficultyButtons.forEach(btn => {
-    btn.classList.toggle("active", btn.dataset.difficulty === diff);
-  });
-  difficultyInfo.textContent = difficulties[diff].desc;
-  game.setDifficulty(diff);
-  updateSaveSummary();
-  renderLeaderboards();
-}
-
-function setMap(mapKey) {
-  currentMap = mapKey;
-  mapButtons.forEach(btn => {
-    btn.classList.toggle("active", btn.dataset.map === mapKey);
-  });
-  mapSelectInfo.textContent = maps[mapKey].desc;
-  game.setMap(mapKey);
-  updateSaveSummary();
-}
-
-function setTowerButtonActive(type) {
-  lampBtn.classList.toggle("active", type === "lamp");
-  coffeeBtn.classList.toggle("active", type === "coffee");
-  bookBtn.classList.toggle("active", type === "book");
-  bombBtn.classList.toggle("active", type === "bomb");
-  sniperBtn.classList.toggle("active", type === "sniper");
-}
-
-function updateTowerButtons() {
-  const save = loadSave();
-
-  const configs = [
-    { key: "lamp", el: lampBtn },
-    { key: "coffee", el: coffeeBtn },
-    { key: "book", el: bookBtn },
-    { key: "bomb", el: bombBtn },
-    { key: "sniper", el: sniperBtn }
-  ];
-
-  for (const item of configs) {
-    const tower = towerTypes[item.key];
-    const unlocked = !!save.unlocks[item.key];
-    const need = unlockRequirements[item.key];
-
-    if (unlocked) {
-      item.el.disabled = false;
-      item.el.textContent = `${tower.name}（${tower.cost}）`;
-    } else {
-      item.el.disabled = true;
-      item.el.textContent = `${tower.name}（${tower.cost}）🔒${need}`;
-    }
-  }
-}
-
-function updateSaveSummary() {
-  const save = loadSave();
-  const stars = getStars(currentMap, currentDifficulty);
-  const unlocked = Object.entries(save.unlocks)
-    .filter(([, v]) => v)
-    .map(([k]) => towerTypes[k].name)
-    .join("、");
-
-  saveSummaryBox.textContent =
-`局外金币：${save.metaCoins}
-当前地图星级：${"★".repeat(stars)}${"☆".repeat(3 - stars)}
-已解锁防御塔：${unlocked}
-
-解锁条件：
-范围塔：${unlockRequirements.bomb} 金币
-狙击塔：${unlockRequirements.sniper} 金币`;
-}
-
-function handleGameUpdate(ui) {
-  goldText.textContent = ui.gold;
-  livesText.textContent = ui.lives;
-  waveText.textContent = ui.waveText;
-  stateText.textContent = ui.stateText;
-  skillCdText.textContent = ui.skillCdText;
-  scoreText.textContent = ui.score;
-  mapText.textContent = ui.mapLabel;
-  logBox.textContent = ui.logText;
-  wavePreviewBox.textContent = ui.nextWaveText;
-  selectedTowerInfo.textContent = ui.selectedTowerInfoText;
-  mapInfoBox.textContent = ui.mapDesc;
-
-  startWaveBtn.disabled = ui.startWaveDisabled;
-  pauseBtn.disabled = ui.pauseDisabled;
-  pauseBtn.textContent = ui.pauseText;
-  skillBtn.disabled = ui.skillDisabled;
-  upgradeBtn.disabled = !ui.canUpgrade;
-  sellBtn.disabled = !ui.canSell;
-
-  soundBtn.textContent = ui.soundEnabled ? "音效：开启" : "音效：关闭";
-  soundBtn.classList.toggle("sound-on", ui.soundEnabled);
-  soundBtn.classList.toggle("sound-off", !ui.soundEnabled);
-
-  setTowerButtonActive(ui.selectedTowerType);
-  if (ui.selectedTowerType && towerTypes[ui.selectedTowerType]) {
-    descBox.textContent = towerTypes[ui.selectedTowerType].description;
-  } else {
-    descBox.textContent = DEFAULT_DESC;
-  }
-
-  updateTowerButtons();
+function validateEmail(email) {
+  return /\S+@\S+\.\S+/.test(email.trim());
 }
 
 function calcStars(result) {
@@ -245,6 +159,129 @@ function getRankInfo(mode, docId) {
   const list = getFilteredLeaderboard(mode);
   const index = list.findIndex(item => item.id === docId);
   return index >= 0 ? index + 1 : null;
+}
+
+function updateTowerButtons() {
+  const save = loadSave();
+
+  const configs = [
+    { key: "lamp", el: lampBtn },
+    { key: "coffee", el: coffeeBtn },
+    { key: "book", el: bookBtn },
+    { key: "bomb", el: bombBtn },
+    { key: "sniper", el: sniperBtn }
+  ];
+
+  for (const item of configs) {
+    const tower = towerTypes[item.key];
+    const unlocked = !!save.unlocks[item.key];
+    const need = unlockRequirements[item.key];
+
+    if (unlocked) {
+      item.el.disabled = false;
+      item.el.textContent = `${tower.name}（${tower.cost}）`;
+    } else {
+      item.el.disabled = true;
+      item.el.textContent = `${tower.name}（${tower.cost}）🔒${need}`;
+    }
+  }
+}
+
+function updateSaveSummary() {
+  const save = loadSave();
+  const stars = getStars(currentMap, currentDifficulty);
+  const unlocked = Object.entries(save.unlocks)
+    .filter(([, v]) => v)
+    .map(([k]) => towerTypes[k].name)
+    .join("、");
+
+  saveSummaryBox.textContent =
+`局外金币：${save.metaCoins}
+当前地图星级：${"★".repeat(stars)}${"☆".repeat(3 - stars)}
+已解锁防御塔：${unlocked}
+
+解锁条件：
+范围塔：${unlockRequirements.bomb} 金币
+狙击塔：${unlockRequirements.sniper} 金币`;
+}
+
+function updateAuthUI(user) {
+  currentUser = user;
+  playerNickname = user ? (user.displayName || getCurrentNickname()) : "";
+
+  if (user) {
+    authStatus.textContent = `已登录：${playerNickname || "未命名用户"}（${user.email || ""}）`;
+    if (playerNickname) {
+      nicknameInput.value = playerNickname;
+    }
+    if (user.email) {
+      emailInput.value = user.email;
+    }
+    startGameBtn.disabled = false;
+  } else {
+    authStatus.textContent = "未登录，请先注册或登录。";
+    startGameBtn.disabled = true;
+  }
+}
+
+function handleGameUpdate(ui) {
+  goldText.textContent = ui.gold;
+  livesText.textContent = ui.lives;
+  waveText.textContent = ui.waveText;
+  stateText.textContent = ui.stateText;
+  skillCdText.textContent = ui.skillCdText;
+  scoreText.textContent = ui.score;
+  mapText.textContent = ui.mapLabel;
+  logBox.textContent = ui.logText;
+  wavePreviewBox.textContent = ui.nextWaveText;
+  selectedTowerInfo.textContent = ui.selectedTowerInfoText;
+  mapInfoBox.textContent = ui.mapDesc;
+
+  startWaveBtn.disabled = ui.startWaveDisabled;
+  pauseBtn.disabled = ui.pauseDisabled;
+  pauseBtn.textContent = ui.pauseText;
+  skillBtn.disabled = ui.skillDisabled;
+  upgradeBtn.disabled = !ui.canUpgrade;
+  sellBtn.disabled = !ui.canSell;
+
+  soundBtn.textContent = ui.soundEnabled ? "音效：开启" : "音效：关闭";
+  soundBtn.classList.toggle("sound-on", ui.soundEnabled);
+  soundBtn.classList.toggle("sound-off", !ui.soundEnabled);
+
+  lampBtn.classList.toggle("active", ui.selectedTowerType === "lamp");
+  coffeeBtn.classList.toggle("active", ui.selectedTowerType === "coffee");
+  bookBtn.classList.toggle("active", ui.selectedTowerType === "book");
+  bombBtn.classList.toggle("active", ui.selectedTowerType === "bomb");
+  sniperBtn.classList.toggle("active", ui.selectedTowerType === "sniper");
+
+  if (ui.selectedTowerType && towerTypes[ui.selectedTowerType]) {
+    descBox.textContent = towerTypes[ui.selectedTowerType].description;
+  } else {
+    descBox.textContent = DEFAULT_DESC;
+  }
+
+  updateTowerButtons();
+}
+
+function setDifficulty(diff) {
+  currentDifficulty = diff;
+  difficultyButtons.forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.difficulty === diff);
+  });
+  difficultyInfo.textContent = difficulties[diff].desc;
+  game.setDifficulty(diff);
+  updateSaveSummary();
+  renderLeaderboards();
+}
+
+function setMap(mapKey) {
+  currentMap = mapKey;
+  mapButtons.forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.map === mapKey);
+  });
+  mapSelectInfo.textContent = maps[mapKey].desc;
+  game.setMap(mapKey);
+  updateSaveSummary();
 }
 
 function renderLeaderboardTo(container, mode) {
@@ -349,7 +386,7 @@ ${result.victory ? "干得漂亮，你守住了最后一波。" : "别灰心，�
   updateSaveSummary();
   updateTowerButtons();
 
-  if (!scoreSubmitted && result.score > 0 && validateNickname(playerNickname)) {
+  if (!scoreSubmitted && result.score > 0 && currentUser && playerNickname) {
     scoreSubmitted = true;
     resultLeaderboardStatus.textContent = "正在提交分数...";
     try {
@@ -371,10 +408,70 @@ ${result.victory ? "干得漂亮，你守住了最后一波。" : "别灰心，�
 function chooseTower(type) {
   const save = loadSave();
   if (!save.unlocks[type]) return;
-
   game.setSelectedTowerType(type);
   descBox.textContent = towerTypes[type].description;
 }
+
+registerBtn.addEventListener("click", async () => {
+  const nickname = nicknameInput.value.trim();
+  const email = emailInput.value.trim();
+  const password = passwordInput.value;
+
+  if (!validateNickname(nickname)) {
+    authStatus.textContent = "注册时请输入 1 到 20 个字符的固定昵称。";
+    return;
+  }
+  if (!validateEmail(email)) {
+    authStatus.textContent = "请输入正确的邮箱地址。";
+    return;
+  }
+  if (password.length < 6) {
+    authStatus.textContent = "密码至少 6 位。";
+    return;
+  }
+
+  authStatus.textContent = "注册中...";
+  try {
+    await registerUser({ email, password, nickname });
+    authStatus.textContent = "注册成功，已自动登录。";
+  } catch (err) {
+    console.error(err);
+    authStatus.textContent = `注册失败：${err.code || err.message}`;
+  }
+});
+
+loginBtn.addEventListener("click", async () => {
+  const email = emailInput.value.trim();
+  const password = passwordInput.value;
+
+  if (!validateEmail(email)) {
+    authStatus.textContent = "请输入正确的邮箱地址。";
+    return;
+  }
+  if (!password) {
+    authStatus.textContent = "请输入密码。";
+    return;
+  }
+
+  authStatus.textContent = "登录中...";
+  try {
+    await loginUser({ email, password });
+    authStatus.textContent = "登录成功。";
+  } catch (err) {
+    console.error(err);
+    authStatus.textContent = `登录失败：${err.code || err.message}`;
+  }
+});
+
+logoutBtn.addEventListener("click", async () => {
+  try {
+    await logoutUser();
+    authStatus.textContent = "已退出登录。";
+  } catch (err) {
+    console.error(err);
+    authStatus.textContent = `退出失败：${err.code || err.message}`;
+  }
+});
 
 lampBtn.addEventListener("click", () => chooseTower("lamp"));
 coffeeBtn.addEventListener("click", () => chooseTower("coffee"));
@@ -409,13 +506,17 @@ resultGlobalRankTab.addEventListener("click", () => setResultRankMode("global"))
 resultDifficultyRankTab.addEventListener("click", () => setResultRankMode("difficulty"));
 
 startGameBtn.addEventListener("click", () => {
-  const name = nicknameInput.value.trim();
-  if (!validateNickname(name)) {
-    leaderboardStatus.textContent = "请输入 1 到 20 个字符的昵称。";
+  if (!currentUser) {
+    authStatus.textContent = "请先注册或登录，再开始游戏。";
     return;
   }
 
-  playerNickname = name;
+  playerNickname = getCurrentNickname();
+  if (!playerNickname) {
+    authStatus.textContent = "当前账号没有昵称，请重新注册。";
+    return;
+  }
+
   scoreSubmitted = false;
   lastSubmittedDocId = null;
   lastResult = null;
@@ -426,6 +527,10 @@ startGameBtn.addEventListener("click", () => {
 });
 
 playAgainBtn.addEventListener("click", () => {
+  if (!currentUser) {
+    resultLeaderboardStatus.textContent = "请先登录。";
+    return;
+  }
   scoreSubmitted = false;
   lastSubmittedDocId = null;
   lastResult = null;
@@ -441,6 +546,10 @@ backTitleBtn.addEventListener("click", async () => {
   updateSaveSummary();
   updateTowerButtons();
   await refreshLeaderboards();
+});
+
+watchAuth(user => {
+  updateAuthUI(user);
 });
 
 setDifficulty("easy");
