@@ -2,6 +2,7 @@ import {
   GAME_WIDTH,
   GAME_HEIGHT,
   ROAD_OUTER_WIDTH,
+  ROAD_INNER_WIDTH,
   maps,
   towerTypes,
   enemyTypes,
@@ -217,6 +218,13 @@ export class Game {
     this.waveActive = true;
     this.logText = `第 ${this.waveIndex + 1} 波开始！怪物来了！`;
     this.playTone(360, 0.08, "sawtooth", 0.025);
+
+    if (this.spawnQueue.includes("boss")) {
+      this.logText = `第 ${this.waveIndex + 1} 波开始！Boss 来袭！`;
+      this.playTone(220, 0.18, "sawtooth", 0.04);
+      setTimeout(() => this.playTone(180, 0.18, "sawtooth", 0.04), 180);
+    }
+
     this.emitUpdate();
   }
 
@@ -284,6 +292,10 @@ export class Game {
     tower.range += 12;
     tower.fireRate = Math.max(0.55, tower.fireRate * 0.9);
 
+    if (tower.splashRadius) {
+      tower.splashRadius += 5;
+    }
+
     this.score += 20;
     this.spawnParticles(tower.x, tower.y, tower.color, 10, 90, 0.35);
     this.playTone(660, 0.07, "triangle", 0.02);
@@ -326,6 +338,8 @@ export class Game {
       cooldown: 0,
       slow: t.slow,
       slowTime: t.slowTime,
+      splashRadius: t.splashRadius || 0,
+      splashFactor: t.splashFactor || 0,
       label: t.label,
       level: 1,
       spent: t.cost,
@@ -333,10 +347,11 @@ export class Game {
     };
   }
 
-  createEnemy(typeKey) {
+  createEnemy(typeKey, distance = 0) {
     const t = enemyTypes[typeKey];
     const cfg = difficulties[this.currentDifficulty];
-    return {
+
+    const enemy = {
       id: this.enemyIdCounter++,
       type: typeKey,
       name: t.name,
@@ -347,15 +362,44 @@ export class Game {
       color: t.color,
       radius: t.radius,
       label: t.label,
-      distance: 0,
+      distance,
       alive: true,
       slowFactor: 1,
-      slowTimer: 0
+      slowTimer: 0,
+      shieldHP: 0,
+      maxShieldHP: 0,
+      enraged: false,
+      summon75Done: false,
+      summon35Done: false,
+      didSplit: false
     };
+
+    if (typeKey === "shield") {
+      enemy.shieldHP = Math.round(38 * cfg.enemyHpMul);
+      enemy.maxShieldHP = enemy.shieldHP;
+    }
+
+    if (typeKey === "boss") {
+      enemy.shieldHP = Math.round(140 * cfg.enemyHpMul);
+      enemy.maxShieldHP = enemy.shieldHP;
+    }
+
+    const pos = this.getPositionOnPath(distance);
+    enemy.x = pos.x;
+    enemy.y = pos.y;
+
+    return enemy;
   }
 
   spawnEnemy(typeKey) {
     this.enemies.push(this.createEnemy(typeKey));
+  }
+
+  spawnChildrenAt(distance, types) {
+    types.forEach((type, idx) => {
+      const d = Math.max(0, distance - (idx + 1) * 16);
+      this.enemies.push(this.createEnemy(type, d));
+    });
   }
 
   spawnParticles(x, y, color, count, speed = 120, life = 0.4) {
@@ -394,23 +438,91 @@ export class Game {
     return best;
   }
 
-  hitEnemy(enemy, bullet) {
+  killEnemy(enemy) {
+    if (!enemy.alive) return;
+
+    enemy.alive = false;
+    this.gold += enemy.reward;
+    this.score += enemy.reward;
+
+    this.spawnParticles(enemy.x, enemy.y, enemy.color, enemy.type === "boss" ? 28 : 14, 150, 0.45);
+    this.playTone(820, 0.04, "square", 0.012);
+
+    if (enemy.type === "split" && !enemy.didSplit) {
+      enemy.didSplit = true;
+      this.spawnChildrenAt(enemy.distance, ["rush", "rush"]);
+    }
+  }
+
+  applyDamage(enemy, damage, slow = 0, slowTime = 0, particleColor = "#ffffff") {
     if (!enemy || !enemy.alive) return;
 
-    enemy.hp -= bullet.damage;
-    this.spawnParticles(enemy.x, enemy.y, bullet.color, 3, 50, 0.18);
+    let remain = damage;
 
-    if (bullet.slow > 0) {
-      enemy.slowFactor = Math.min(enemy.slowFactor, bullet.slow);
-      enemy.slowTimer = Math.max(enemy.slowTimer, bullet.slowTime);
+    if (enemy.shieldHP > 0) {
+      const absorbed = Math.min(enemy.shieldHP, remain);
+      enemy.shieldHP -= absorbed;
+      remain -= absorbed;
+      this.spawnParticles(enemy.x, enemy.y, "#38bdf8", 4, 50, 0.18);
     }
 
-    if (enemy.hp <= 0 && enemy.alive) {
-      enemy.alive = false;
-      this.gold += enemy.reward;
-      this.score += enemy.reward;
-      this.spawnParticles(enemy.x, enemy.y, enemy.color, 14, 150, 0.45);
-      this.playTone(820, 0.04, "square", 0.012);
+    if (remain > 0) {
+      enemy.hp -= remain;
+      this.spawnParticles(enemy.x, enemy.y, particleColor, 3, 50, 0.18);
+    }
+
+    if (slow > 0) {
+      enemy.slowFactor = Math.min(enemy.slowFactor, slow);
+      enemy.slowTimer = Math.max(enemy.slowTimer, slowTime);
+    }
+
+    if (enemy.hp <= 0) {
+      this.killEnemy(enemy);
+    }
+  }
+
+  applySplashDamage(centerEnemy, bullet) {
+    const radius = bullet.splashRadius || 0;
+    if (radius <= 0) {
+      this.applyDamage(centerEnemy, bullet.damage, bullet.slow, bullet.slowTime, bullet.color);
+      return;
+    }
+
+    for (const enemy of this.enemies) {
+      if (!enemy.alive) continue;
+      const dx = enemy.x - centerEnemy.x;
+      const dy = enemy.y - centerEnemy.y;
+      const dist = Math.hypot(dx, dy);
+
+      if (dist <= radius) {
+        const dmg = enemy === centerEnemy
+          ? bullet.damage
+          : Math.max(1, Math.round(bullet.damage * (bullet.splashFactor || 0.6)));
+        this.applyDamage(enemy, dmg, bullet.slow, bullet.slowTime, bullet.color);
+      }
+    }
+  }
+
+  handleBossMechanics(enemy) {
+    if (enemy.type !== "boss" || !enemy.alive) return;
+
+    if (!enemy.summon75Done && enemy.hp <= enemy.maxHp * 0.75) {
+      enemy.summon75Done = true;
+      this.spawnChildrenAt(enemy.distance, ["rush", "fast"]);
+      this.logText = "Boss 召唤了增援！";
+    }
+
+    if (!enemy.enraged && enemy.hp <= enemy.maxHp * 0.5) {
+      enemy.enraged = true;
+      enemy.speed *= 1.35;
+      this.logText = "Boss 进入狂暴状态！";
+      this.spawnParticles(enemy.x, enemy.y, "#f97316", 18, 180, 0.4);
+    }
+
+    if (!enemy.summon35Done && enemy.hp <= enemy.maxHp * 0.35) {
+      enemy.summon35Done = true;
+      this.spawnChildrenAt(enemy.distance, ["elite", "rush"]);
+      this.logText = "Boss 再次召唤了增援！";
     }
   }
 
@@ -480,15 +592,12 @@ export class Game {
   }
 
   countWaveComposition(wave) {
-    const map = { normal: 0, fast: 0, tank: 0, rush: 0, elite: 0 };
-    wave.forEach(e => map[e]++);
-    const parts = [];
-    if (map.normal) parts.push(`拖延怪 × ${map.normal}`);
-    if (map.fast) parts.push(`熬夜怪 × ${map.fast}`);
-    if (map.tank) parts.push(`截止日怪 × ${map.tank}`);
-    if (map.rush) parts.push(`冲刺怪 × ${map.rush}`);
-    if (map.elite) parts.push(`精英怪 × ${map.elite}`);
-    return parts.join(" / ");
+    const count = {};
+    wave.forEach(type => {
+      count[type] = (count[type] || 0) + 1;
+    });
+
+    return Object.entries(count).map(([type, n]) => `${enemyTypes[type].name} × ${n}`).join(" / ");
   }
 
   buildSelectedTowerInfoText() {
@@ -623,6 +732,8 @@ export class Game {
         }
       }
 
+      this.handleBossMechanics(enemy);
+
       const globalFactor = this.globalSlowTimer > 0 ? 0.65 : 1;
       enemy.distance += enemy.speed * enemy.slowFactor * globalFactor * dt;
 
@@ -651,16 +762,24 @@ export class Game {
       if (tower.cooldown <= 0) {
         const target = this.findTarget(tower);
         if (target) {
+          let damage = tower.damage;
+
+          if (tower.type === "sniper" && Math.random() < 0.28) {
+            damage = Math.round(damage * 1.7);
+          }
+
           this.bullets.push({
             x: tower.x,
             y: tower.y,
             target,
             speed: tower.bulletSpeed,
-            damage: tower.damage,
+            damage,
             color: tower.color,
-            radius: 5,
+            radius: tower.type === "bomb" ? 6 : 5,
             slow: tower.slow,
-            slowTime: tower.slowTime
+            slowTime: tower.slowTime,
+            splashRadius: tower.splashRadius,
+            splashFactor: tower.splashFactor
           });
           tower.cooldown = tower.fireRate;
         }
@@ -679,7 +798,7 @@ export class Game {
       const move = bullet.speed * dt;
 
       if (dist <= move || dist < 8) {
-        this.hitEnemy(bullet.target, bullet);
+        this.applySplashDamage(bullet.target, bullet);
         bullet.dead = true;
       } else {
         bullet.x += (dx / dist) * move;
@@ -718,7 +837,7 @@ export class Game {
     ctx.stroke();
 
     ctx.strokeStyle = "#94a3b8";
-    ctx.lineWidth = 18;
+    ctx.lineWidth = ROAD_INNER_WIDTH;
     ctx.beginPath();
     ctx.moveTo(this.currentPath[0].x, this.currentPath[0].y);
     for (let i = 1; i < this.currentPath.length; i++) {
@@ -798,6 +917,14 @@ export class Game {
   drawEnemies() {
     const ctx = this.ctx;
     for (const enemy of this.enemies) {
+      if (enemy.type === "boss" && enemy.enraged) {
+        ctx.strokeStyle = "#f97316";
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(enemy.x, enemy.y, enemy.radius + 8, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+
       ctx.fillStyle = enemy.color;
       ctx.beginPath();
       ctx.arc(enemy.x, enemy.y, enemy.radius, 0, Math.PI * 2);
@@ -807,10 +934,18 @@ export class Game {
       const hpRatio = Math.max(enemy.hp, 0) / enemy.maxHp;
 
       ctx.fillStyle = "#1f2937";
-      ctx.fillRect(enemy.x - barWidth / 2, enemy.y - enemy.radius - 12, barWidth, 5);
+      ctx.fillRect(enemy.x - barWidth / 2, enemy.y - enemy.radius - 14, barWidth, 5);
 
       ctx.fillStyle = "#22c55e";
-      ctx.fillRect(enemy.x - barWidth / 2, enemy.y - enemy.radius - 12, barWidth * hpRatio, 5);
+      ctx.fillRect(enemy.x - barWidth / 2, enemy.y - enemy.radius - 14, barWidth * hpRatio, 5);
+
+      if (enemy.maxShieldHP > 0 && enemy.shieldHP > 0) {
+        const shieldRatio = enemy.shieldHP / enemy.maxShieldHP;
+        ctx.fillStyle = "#0f172a";
+        ctx.fillRect(enemy.x - barWidth / 2, enemy.y - enemy.radius - 22, barWidth, 4);
+        ctx.fillStyle = "#38bdf8";
+        ctx.fillRect(enemy.x - barWidth / 2, enemy.y - enemy.radius - 22, barWidth * shieldRatio, 4);
+      }
 
       ctx.fillStyle = "#ffffff";
       ctx.font = "bold 11px Microsoft YaHei";
