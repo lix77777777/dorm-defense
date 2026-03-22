@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>宿舍保卫战 V7</title>
+  <title>宿舍保卫战</title>
   <link rel="stylesheet" href="./style.css" />
 </head>
 <body>
@@ -66,6 +66,8 @@
             <button class="tower-btn" id="lampBtn">台灯塔（100）</button>
             <button class="tower-btn" id="coffeeBtn">咖啡塔（120）</button>
             <button class="tower-btn" id="bookBtn">书本塔（150）</button>
+            <button class="tower-btn" id="bombBtn">范围塔（180）</button>
+            <button class="tower-btn" id="sniperBtn">狙击塔（220）</button>
           </div>
           <div class="desc-box" id="descBox">
 选择一个塔，然后点击地图上的圆形空位放置。
@@ -73,6 +75,8 @@
 台灯塔：基础输出，便宜。
 咖啡塔：伤害较低，但会减速。
 书本塔：单发高伤，适合打厚血怪。
+范围塔：群体伤害，适合清杂兵。
+狙击塔：远距离高伤，适合打精英和Boss。
           </div>
         </div>
 
@@ -126,8 +130,9 @@
         <button class="map-btn" data-map="lab">实验楼</button>
       </div>
 
-      <div class="modal-box" id="difficultyInfo">简单：初始金币更多，基地血量更高，敌人更弱。</div>
+      <div class="modal-box" id="difficultyInfo">简单：也需要认真放塔，但容错更高。</div>
       <div class="modal-box" id="mapSelectInfo">宿舍区：路线平衡，适合标准布局。</div>
+      <div class="modal-box" id="saveSummaryBox">局外金币：0</div>
 
       <div class="modal-actions">
         <button class="modal-btn" id="startGameBtn">开始游戏</button>
