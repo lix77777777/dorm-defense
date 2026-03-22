@@ -27,14 +27,12 @@ export async function submitScore(entry) {
     nickname: entry.nickname,
     score: Math.round(entry.score),
     wave: entry.wave,
-    difficulty: entry.difficulty,
-    map: entry.map,
-    createdAt: Date.now()
+    difficulty: entry.difficulty
   });
   return ref.id;
 }
 
-export async function fetchLeaderboard(max = 100) {
+export async function fetchLeaderboard(max = 200) {
   const q = query(
     collection(db, "leaderboard"),
     orderBy("score", "desc"),
