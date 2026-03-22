@@ -1,0 +1,948 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>宿舍保卫战</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Microsoft YaHei", "Segoe UI", sans-serif;
+      background: linear-gradient(135deg, #dbeafe, #eff6ff);
+      color: #0f172a;
+    }
+
+    .app {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 20px 16px 28px;
+    }
+
+    .title {
+      text-align: center;
+      margin-bottom: 14px;
+    }
+
+    .title h1 {
+      margin: 0 0 6px;
+      font-size: 36px;
+    }
+
+    .title p {
+      margin: 0;
+      color: #475569;
+      font-size: 15px;
+    }
+
+    .top-grid {
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 16px;
+      align-items: start;
+    }
+
+    .panel {
+      background: rgba(255,255,255,0.92);
+      border: 1px solid #dbe4f2;
+      border-radius: 20px;
+      box-shadow: 0 10px 28px rgba(15, 23, 42, 0.08);
+      padding: 16px;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .stat {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+      padding: 12px;
+      text-align: center;
+    }
+
+    .stat .label {
+      display: block;
+      font-size: 12px;
+      color: #64748b;
+      margin-bottom: 6px;
+      font-weight: bold;
+    }
+
+    .stat .value {
+      font-size: 22px;
+      font-weight: 800;
+    }
+
+    canvas {
+      width: 100%;
+      max-width: 100%;
+      border-radius: 18px;
+      background: #fff;
+      border: 1px solid #dbe4f2;
+      display: block;
+    }
+
+    .side h2 {
+      margin-top: 0;
+      margin-bottom: 10px;
+      font-size: 22px;
+    }
+
+    .tower-list {
+      display: grid;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .tower-btn,
+    .main-btn {
+      width: 100%;
+      border: none;
+      border-radius: 14px;
+      padding: 12px 14px;
+      font-size: 15px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: 0.2s ease;
+    }
+
+    .tower-btn {
+      background: #e2e8f0;
+      color: #0f172a;
+      text-align: left;
+    }
+
+    .tower-btn.active {
+      background: #2563eb;
+      color: white;
+    }
+
+    .tower-btn:hover,
+    .main-btn:hover {
+      transform: translateY(-1px);
+    }
+
+    .main-btn {
+      background: #2563eb;
+      color: white;
+      margin-bottom: 10px;
+    }
+
+    .main-btn.secondary {
+      background: #334155;
+    }
+
+    .main-btn:disabled {
+      background: #94a3b8;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .desc-box {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+      padding: 12px;
+      line-height: 1.75;
+      color: #334155;
+      font-size: 14px;
+      white-space: pre-wrap;
+    }
+
+    .log {
+      margin-top: 12px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+      padding: 12px;
+      min-height: 88px;
+      color: #334155;
+      line-height: 1.7;
+      font-size: 14px;
+      white-space: pre-wrap;
+    }
+
+    .legend {
+      margin-top: 12px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+      padding: 12px;
+      font-size: 14px;
+      line-height: 1.8;
+      color: #334155;
+    }
+
+    .footer-note {
+      margin-top: 14px;
+      text-align: center;
+      color: #64748b;
+      font-size: 13px;
+    }
+
+    @media (max-width: 980px) {
+      .top-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .stats {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .title h1 {
+        font-size: 30px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="title">
+      <h1>宿舍保卫战</h1>
+      <p>选择塔后，点击地图上的圆形空位放塔。敌人走到宿舍门口会扣血。</p>
+    </div>
+
+    <div class="top-grid">
+      <div class="panel">
+        <div class="stats">
+          <div class="stat">
+            <span class="label">金币</span>
+            <span class="value" id="goldText">240</span>
+          </div>
+          <div class="stat">
+            <span class="label">基地血量</span>
+            <span class="value" id="livesText">10</span>
+          </div>
+          <div class="stat">
+            <span class="label">当前波次</span>
+            <span class="value" id="waveText">0 / 5</span>
+          </div>
+          <div class="stat">
+            <span class="label">状态</span>
+            <span class="value" id="stateText" style="font-size:18px;">准备中</span>
+          </div>
+        </div>
+
+        <canvas id="gameCanvas" width="900" height="560"></canvas>
+      </div>
+
+      <div class="panel side">
+        <h2>防御塔</h2>
+
+        <div class="tower-list">
+          <button class="tower-btn" id="lampBtn">
+            台灯塔（100）
+          </button>
+          <button class="tower-btn" id="coffeeBtn">
+            咖啡塔（120）
+          </button>
+          <button class="tower-btn" id="bookBtn">
+            书本塔（150）
+          </button>
+        </div>
+
+        <button class="main-btn" id="startWaveBtn">开始下一波</button>
+        <button class="main-btn secondary" id="restartBtn">重新开始</button>
+
+        <div class="desc-box" id="descBox">
+选择一个塔，然后点击地图上的圆形空位放置。
+
+台灯塔：基础输出，便宜。
+咖啡塔：伤害较低，但会减速。
+书本塔：单发高伤，适合打厚血怪。
+        </div>
+
+        <div class="log" id="logBox">欢迎来到宿舍保卫战。先放塔，再开始第一波。</div>
+
+        <div class="legend">
+          <strong>敌人说明</strong><br>
+          蓝色：拖延怪（普通）<br>
+          橙色：熬夜怪（快速）<br>
+          红色：截止日怪（高血量）
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-note">
+      这是浏览器原型版，后面可以继续改成微信小游戏。
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+
+    const goldText = document.getElementById("goldText");
+    const livesText = document.getElementById("livesText");
+    const waveText = document.getElementById("waveText");
+    const stateText = document.getElementById("stateText");
+    const logBox = document.getElementById("logBox");
+    const descBox = document.getElementById("descBox");
+
+    const lampBtn = document.getElementById("lampBtn");
+    const coffeeBtn = document.getElementById("coffeeBtn");
+    const bookBtn = document.getElementById("bookBtn");
+    const startWaveBtn = document.getElementById("startWaveBtn");
+    const restartBtn = document.getElementById("restartBtn");
+
+    const WIDTH = canvas.width;
+    const HEIGHT = canvas.height;
+
+    const pathPoints = [
+      { x: 0, y: 100 },
+      { x: 180, y: 100 },
+      { x: 180, y: 240 },
+      { x: 380, y: 240 },
+      { x: 380, y: 420 },
+      { x: 650, y: 420 },
+      { x: 650, y: 180 },
+      { x: 900, y: 180 }
+    ];
+
+    const towerSpots = [
+      { x: 110, y: 170, tower: null },
+      { x: 135, y: 60, tower: null },
+      { x: 250, y: 165, tower: null },
+      { x: 290, y: 310, tower: null },
+      { x: 455, y: 330, tower: null },
+      { x: 470, y: 485, tower: null },
+      { x: 600, y: 330, tower: null },
+      { x: 720, y: 330, tower: null },
+      { x: 725, y: 115, tower: null },
+      { x: 840, y: 250, tower: null }
+    ];
+
+    const towerTypes = {
+      lamp: {
+        name: "台灯塔",
+        cost: 100,
+        range: 125,
+        damage: 12,
+        fireRate: 1.0,
+        bulletSpeed: 320,
+        color: "#2563eb",
+        size: 16,
+        slow: 0,
+        slowTime: 0,
+        description: "台灯塔：便宜、稳定、适合前期铺场。"
+      },
+      coffee: {
+        name: "咖啡塔",
+        cost: 120,
+        range: 115,
+        damage: 6,
+        fireRate: 1.15,
+        bulletSpeed: 300,
+        color: "#16a34a",
+        size: 16,
+        slow: 0.55,
+        slowTime: 1.5,
+        description: "咖啡塔：伤害较低，但能明显减速敌人。"
+      },
+      book: {
+        name: "书本塔",
+        cost: 150,
+        range: 105,
+        damage: 28,
+        fireRate: 1.8,
+        bulletSpeed: 360,
+        color: "#ea580c",
+        size: 17,
+        slow: 0,
+        slowTime: 0,
+        description: "书本塔：单发高伤，适合处理厚血怪。"
+      }
+    };
+
+    const enemyTypes = {
+      normal: {
+        name: "拖延怪",
+        hp: 40,
+        speed: 80,
+        reward: 20,
+        color: "#3b82f6",
+        radius: 14
+      },
+      fast: {
+        name: "熬夜怪",
+        hp: 28,
+        speed: 130,
+        reward: 18,
+        color: "#f59e0b",
+        radius: 12
+      },
+      tank: {
+        name: "截止日怪",
+        hp: 90,
+        speed: 58,
+        reward: 35,
+        color: "#ef4444",
+        radius: 17
+      }
+    };
+
+    const waves = [
+      ["normal", "normal", "normal", "fast", "normal", "normal"],
+      ["normal", "normal", "fast", "fast", "normal", "normal", "fast", "normal"],
+      ["normal", "fast", "fast", "normal", "tank", "normal", "fast"],
+      ["tank", "normal", "fast", "tank", "normal", "normal", "fast", "normal"],
+      ["tank", "fast", "tank", "fast", "tank", "normal", "fast", "fast", "tank"]
+    ];
+
+    let gold = 240;
+    let lives = 10;
+    let waveIndex = -1;
+    let selectedTowerType = null;
+
+    let towers = [];
+    let enemies = [];
+    let bullets = [];
+
+    let gameOver = false;
+    let victory = false;
+
+    let waveActive = false;
+    let spawnQueue = [];
+    let spawnTimer = 0;
+    let spawnInterval = 0.9;
+
+    let enemyIdCounter = 0;
+    let lastTime = 0;
+
+    const segments = [];
+    let totalPathLength = 0;
+
+    function buildPathData() {
+      segments.length = 0;
+      totalPathLength = 0;
+
+      for (let i = 0; i < pathPoints.length - 1; i++) {
+        const a = pathPoints[i];
+        const b = pathPoints[i + 1];
+        const dx = b.x - a.x;
+        const dy = b.y - a.y;
+        const len = Math.hypot(dx, dy);
+        segments.push({
+          ax: a.x,
+          ay: a.y,
+          bx: b.x,
+          by: b.y,
+          len,
+          start: totalPathLength,
+          end: totalPathLength + len
+        });
+        totalPathLength += len;
+      }
+    }
+
+    function getPositionOnPath(distance) {
+      const d = Math.max(0, Math.min(distance, totalPathLength));
+
+      for (const seg of segments) {
+        if (d >= seg.start && d <= seg.end) {
+          const t = (d - seg.start) / seg.len;
+          return {
+            x: seg.ax + (seg.bx - seg.ax) * t,
+            y: seg.ay + (seg.by - seg.ay) * t
+          };
+        }
+      }
+
+      const last = pathPoints[pathPoints.length - 1];
+      return { x: last.x, y: last.y };
+    }
+
+    function resetGame() {
+      gold = 240;
+      lives = 10;
+      waveIndex = -1;
+      selectedTowerType = null;
+      towers = [];
+      enemies = [];
+      bullets = [];
+      gameOver = false;
+      victory = false;
+      waveActive = false;
+      spawnQueue = [];
+      spawnTimer = 0;
+      enemyIdCounter = 0;
+
+      towerSpots.forEach(s => s.tower = null);
+
+      setActiveTowerButton(null);
+      updateUI();
+      setLog("欢迎来到宿舍保卫战。先放塔，再开始第一波。");
+    }
+
+    function setLog(text) {
+      logBox.textContent = text;
+    }
+
+    function setActiveTowerButton(type) {
+      selectedTowerType = type;
+      [lampBtn, coffeeBtn, bookBtn].forEach(btn => btn.classList.remove("active"));
+
+      if (type === "lamp") lampBtn.classList.add("active");
+      if (type === "coffee") coffeeBtn.classList.add("active");
+      if (type === "book") bookBtn.classList.add("active");
+
+      if (type && towerTypes[type]) {
+        descBox.textContent = towerTypes[type].description;
+      } else {
+        descBox.textContent =
+`选择一个塔，然后点击地图上的圆形空位放置。
+
+台灯塔：基础输出，便宜。
+咖啡塔：伤害较低，但会减速。
+书本塔：单发高伤，适合打厚血怪。`;
+      }
+    }
+
+    function updateUI() {
+      goldText.textContent = gold;
+      livesText.textContent = lives;
+      waveText.textContent = `${Math.max(waveIndex + 1, 0)} / ${waves.length}`;
+
+      if (gameOver) {
+        stateText.textContent = "失败";
+      } else if (victory) {
+        stateText.textContent = "胜利";
+      } else if (waveActive) {
+        stateText.textContent = "战斗中";
+      } else {
+        stateText.textContent = "准备中";
+      }
+
+      if (gameOver || victory || waveActive || waveIndex >= waves.length - 1 && !gameOver && !victory) {
+        startWaveBtn.disabled = waveActive || gameOver || victory || (waveIndex >= waves.length - 1);
+      } else {
+        startWaveBtn.disabled = false;
+      }
+
+      if (waveIndex >= waves.length - 1 && !waveActive && !victory && !gameOver) {
+        startWaveBtn.disabled = true;
+      }
+    }
+
+    function startNextWave() {
+      if (gameOver || victory || waveActive) return;
+      if (waveIndex >= waves.length - 1) return;
+
+      waveIndex++;
+      spawnQueue = [...waves[waveIndex]];
+      spawnTimer = 0;
+      waveActive = true;
+
+      setLog(`第 ${waveIndex + 1} 波开始！敌人来了！`);
+      updateUI();
+    }
+
+    function spawnEnemy(typeKey) {
+      const t = enemyTypes[typeKey];
+      enemies.push({
+        id: enemyIdCounter++,
+        type: typeKey,
+        name: t.name,
+        hp: t.hp,
+        maxHp: t.hp,
+        speed: t.speed,
+        reward: t.reward,
+        color: t.color,
+        radius: t.radius,
+        distance: 0,
+        alive: true,
+        slowFactor: 1,
+        slowTimer: 0
+      });
+    }
+
+    function createTower(type, x, y) {
+      const t = towerTypes[type];
+      return {
+        type,
+        x,
+        y,
+        range: t.range,
+        damage: t.damage,
+        fireRate: t.fireRate,
+        bulletSpeed: t.bulletSpeed,
+        color: t.color,
+        size: t.size,
+        cooldown: 0,
+        slow: t.slow,
+        slowTime: t.slowTime
+      };
+    }
+
+    function findTarget(tower) {
+      let best = null;
+      let bestDistance = -1;
+
+      for (const enemy of enemies) {
+        if (!enemy.alive) continue;
+        const dx = enemy.x - tower.x;
+        const dy = enemy.y - tower.y;
+        const d = Math.hypot(dx, dy);
+
+        if (d <= tower.range) {
+          if (enemy.distance > bestDistance) {
+            bestDistance = enemy.distance;
+            best = enemy;
+          }
+        }
+      }
+      return best;
+    }
+
+    function hitEnemy(enemy, bullet) {
+      if (!enemy || !enemy.alive) return;
+
+      enemy.hp -= bullet.damage;
+
+      if (bullet.slow > 0) {
+        enemy.slowFactor = bullet.slow;
+        enemy.slowTimer = Math.max(enemy.slowTimer, bullet.slowTime);
+      }
+
+      if (enemy.hp <= 0 && enemy.alive) {
+        enemy.alive = false;
+        gold += enemy.reward;
+      }
+    }
+
+    function updateGame(dt) {
+      if (gameOver || victory) {
+        updateUI();
+        return;
+      }
+
+      if (waveActive) {
+        spawnTimer += dt;
+
+        if (spawnQueue.length > 0 && spawnTimer >= spawnInterval) {
+          spawnEnemy(spawnQueue.shift());
+          spawnTimer = 0;
+        }
+
+        if (spawnQueue.length === 0 && enemies.length === 0) {
+          waveActive = false;
+
+          if (waveIndex === waves.length - 1) {
+            victory = true;
+            setLog("恭喜你，守住了宿舍！你赢了！");
+          } else {
+            setLog(`第 ${waveIndex + 1} 波结束。准备下一波。`);
+          }
+        }
+      }
+
+      for (const enemy of enemies) {
+        if (!enemy.alive) continue;
+
+        if (enemy.slowTimer > 0) {
+          enemy.slowTimer -= dt;
+          if (enemy.slowTimer <= 0) {
+            enemy.slowFactor = 1;
+            enemy.slowTimer = 0;
+          }
+        }
+
+        enemy.distance += enemy.speed * enemy.slowFactor * dt;
+
+        if (enemy.distance >= totalPathLength) {
+          enemy.alive = false;
+          lives--;
+
+          if (lives <= 0) {
+            lives = 0;
+            gameOver = true;
+            setLog("宿舍失守了，游戏失败。");
+          }
+        } else {
+          const pos = getPositionOnPath(enemy.distance);
+          enemy.x = pos.x;
+          enemy.y = pos.y;
+        }
+      }
+
+      enemies = enemies.filter(e => e.alive);
+
+      for (const tower of towers) {
+        tower.cooldown -= dt;
+
+        if (tower.cooldown <= 0) {
+          const target = findTarget(tower);
+          if (target) {
+            bullets.push({
+              x: tower.x,
+              y: tower.y,
+              target,
+              speed: tower.bulletSpeed,
+              damage: tower.damage,
+              color: tower.color,
+              radius: 5,
+              slow: tower.slow,
+              slowTime: tower.slowTime
+            });
+
+            tower.cooldown = tower.fireRate;
+          }
+        }
+      }
+
+      for (const bullet of bullets) {
+        if (!bullet.target || !bullet.target.alive) {
+          bullet.dead = true;
+          continue;
+        }
+
+        const dx = bullet.target.x - bullet.x;
+        const dy = bullet.target.y - bullet.y;
+        const dist = Math.hypot(dx, dy);
+        const move = bullet.speed * dt;
+
+        if (dist <= move || dist < 8) {
+          hitEnemy(bullet.target, bullet);
+          bullet.dead = true;
+        } else {
+          bullet.x += (dx / dist) * move;
+          bullet.y += (dy / dist) * move;
+        }
+      }
+
+      bullets = bullets.filter(b => !b.dead);
+
+      if (gameOver) {
+        startWaveBtn.disabled = true;
+      }
+
+      if (victory) {
+        startWaveBtn.disabled = true;
+      }
+
+      updateUI();
+    }
+
+    function drawPath() {
+      ctx.save();
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+
+      ctx.strokeStyle = "#cbd5e1";
+      ctx.lineWidth = 44;
+      ctx.beginPath();
+      ctx.moveTo(pathPoints[0].x, pathPoints[0].y);
+      for (let i = 1; i < pathPoints.length; i++) {
+        ctx.lineTo(pathPoints[i].x, pathPoints[i].y);
+      }
+      ctx.stroke();
+
+      ctx.strokeStyle = "#94a3b8";
+      ctx.lineWidth = 18;
+      ctx.beginPath();
+      ctx.moveTo(pathPoints[0].x, pathPoints[0].y);
+      for (let i = 1; i < pathPoints.length; i++) {
+        ctx.lineTo(pathPoints[i].x, pathPoints[i].y);
+      }
+      ctx.stroke();
+
+      ctx.restore();
+
+      ctx.fillStyle = "#16a34a";
+      ctx.beginPath();
+      ctx.arc(18, 100, 12, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = "#dc2626";
+      ctx.fillRect(WIDTH - 28, 156, 20, 48);
+
+      ctx.fillStyle = "#0f172a";
+      ctx.font = "bold 13px Microsoft YaHei";
+      ctx.fillText("起点", 8, 78);
+      ctx.fillText("宿舍", WIDTH - 48, 148);
+    }
+
+    function drawTowerSpots() {
+      for (const spot of towerSpots) {
+        ctx.beginPath();
+        ctx.arc(spot.x, spot.y, 19, 0, Math.PI * 2);
+
+        if (spot.tower) {
+          ctx.fillStyle = "#94a3b8";
+        } else {
+          ctx.fillStyle = selectedTowerType ? "#bfdbfe" : "#e2e8f0";
+        }
+
+        ctx.fill();
+        ctx.strokeStyle = "#64748b";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
+    }
+
+    function drawTowers() {
+      for (const tower of towers) {
+        ctx.fillStyle = tower.color;
+        ctx.beginPath();
+        ctx.arc(tower.x, tower.y, tower.size, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "bold 12px Microsoft YaHei";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+
+        const label =
+          tower.type === "lamp" ? "灯" :
+          tower.type === "coffee" ? "咖" : "书";
+
+        ctx.fillText(label, tower.x, tower.y + 1);
+      }
+    }
+
+    function drawEnemies() {
+      for (const enemy of enemies) {
+        ctx.fillStyle = enemy.color;
+        ctx.beginPath();
+        ctx.arc(enemy.x, enemy.y, enemy.radius, 0, Math.PI * 2);
+        ctx.fill();
+
+        const barWidth = enemy.radius * 2;
+        const hpRatio = Math.max(enemy.hp, 0) / enemy.maxHp;
+
+        ctx.fillStyle = "#1f2937";
+        ctx.fillRect(enemy.x - barWidth / 2, enemy.y - enemy.radius - 12, barWidth, 5);
+
+        ctx.fillStyle = "#22c55e";
+        ctx.fillRect(enemy.x - barWidth / 2, enemy.y - enemy.radius - 12, barWidth * hpRatio, 5);
+
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "bold 11px Microsoft YaHei";
+        ctx.textAlign = "center";
+        ctx.fillText(
+          enemy.type === "normal" ? "拖" :
+          enemy.type === "fast" ? "夜" : "截",
+          enemy.x,
+          enemy.y + 1
+        );
+      }
+    }
+
+    function drawBullets() {
+      for (const bullet of bullets) {
+        ctx.fillStyle = bullet.color;
+        ctx.beginPath();
+        ctx.arc(bullet.x, bullet.y, bullet.radius, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    function drawOverlay() {
+      if (!gameOver && !victory) return;
+
+      ctx.fillStyle = "rgba(15, 23, 42, 0.55)";
+      ctx.fillRect(0, 0, WIDTH, HEIGHT);
+
+      ctx.fillStyle = "#ffffff";
+      ctx.textAlign = "center";
+      ctx.font = "bold 42px Microsoft YaHei";
+      ctx.fillText(victory ? "胜利！" : "失败！", WIDTH / 2, HEIGHT / 2 - 10);
+
+      ctx.font = "20px Microsoft YaHei";
+      ctx.fillText(victory ? "宿舍守住了！" : "宿舍失守了！", WIDTH / 2, HEIGHT / 2 + 34);
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, WIDTH, HEIGHT);
+
+      drawPath();
+      drawTowerSpots();
+      drawTowers();
+      drawEnemies();
+      drawBullets();
+      drawOverlay();
+    }
+
+    function gameLoop(timestamp) {
+      if (!lastTime) lastTime = timestamp;
+      const dt = (timestamp - lastTime) / 1000;
+      lastTime = timestamp;
+
+      updateGame(Math.min(dt, 0.033));
+      draw();
+
+      requestAnimationFrame(gameLoop);
+    }
+
+    canvas.addEventListener("click", (e) => {
+      if (gameOver || victory) return;
+      if (!selectedTowerType) {
+        setLog("请先选择一个塔。");
+        return;
+      }
+
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = WIDTH / rect.width;
+      const scaleY = HEIGHT / rect.height;
+
+      const mx = (e.clientX - rect.left) * scaleX;
+      const my = (e.clientY - rect.top) * scaleY;
+
+      for (const spot of towerSpots) {
+        const d = Math.hypot(mx - spot.x, my - spot.y);
+
+        if (d <= 20) {
+          if (spot.tower) {
+            setLog("这个位置已经有塔了。");
+            return;
+          }
+
+          const t = towerTypes[selectedTowerType];
+          if (gold < t.cost) {
+            setLog("金币不足，无法放置这个塔。");
+            return;
+          }
+
+          gold -= t.cost;
+          const tower = createTower(selectedTowerType, spot.x, spot.y);
+          towers.push(tower);
+          spot.tower = tower;
+          setLog(`已放置${t.name}。`);
+          updateUI();
+          return;
+        }
+      }
+
+      setLog("请点击地图上的圆形空位放塔。");
+    });
+
+    lampBtn.addEventListener("click", () => setActiveTowerButton("lamp"));
+    coffeeBtn.addEventListener("click", () => setActiveTowerButton("coffee"));
+    bookBtn.addEventListener("click", () => setActiveTowerButton("book"));
+
+    startWaveBtn.addEventListener("click", () => {
+      if (waveIndex === waves.length - 1 && !waveActive) {
+        setLog("已经是最后一波了。");
+        return;
+      }
+      startNextWave();
+    });
+
+    restartBtn.addEventListener("click", () => {
+      resetGame();
+    });
+
+    buildPathData();
+    resetGame();
+    requestAnimationFrame(gameLoop);
+  </script>
+</body>
+</html>
