@@ -65,6 +65,14 @@ export class Game {
 
     this.enemyIdCounter = 0;
     this.logText = "欢迎来到宿舍保卫战。";
+
+    this.stats = {
+      kills: 0,
+      towersBuilt: 0,
+      towersSold: 0,
+      skillsUsed: 0,
+      bossKills: 0
+    };
   }
 
   bindEvents() {
@@ -129,7 +137,8 @@ export class Game {
 
   preparePreviewState() {
     const cfg = difficulties[this.currentDifficulty];
-    this.gold = cfg.startGold;
+    const mapEffect = maps[this.currentMapKey].effect || {};
+    this.gold = cfg.startGold + (mapEffect.startGoldBonus || 0);
     this.lives = cfg.startLives;
     this.waveIndex = -1;
     this.score = 0;
@@ -193,10 +202,12 @@ export class Game {
 
   startNewGame() {
     const cfg = difficulties[this.currentDifficulty];
+    const mapEffect = maps[this.currentMapKey].effect || {};
+
     this.resetCoreState();
     this.applyMapData();
 
-    this.gold = cfg.startGold;
+    this.gold = cfg.startGold + (mapEffect.startGoldBonus || 0);
     this.lives = cfg.startLives;
     this.gameStarted = true;
     this.logText = `开始游戏：${cfg.label} / ${maps[this.currentMapKey].label}`;
@@ -241,6 +252,7 @@ export class Game {
     this.skillCooldown = 25;
     this.globalSlowTimer = 3;
     this.skillFlashTimer = 0.35;
+    this.stats.skillsUsed += 1;
 
     for (const enemy of this.enemies) {
       enemy.slowFactor = Math.min(enemy.slowFactor, 0.45);
@@ -309,6 +321,7 @@ export class Game {
 
     const value = this.getSellValue(tower);
     this.gold += value;
+    this.stats.towersSold += 1;
 
     this.towers = this.towers.filter(t => t !== tower);
     if (tower.spotRef) {
@@ -324,7 +337,9 @@ export class Game {
 
   createTower(type, x, y) {
     const t = towerTypes[type];
-    return {
+    const effect = maps[this.currentMapKey].effect || {};
+
+    const tower = {
       type,
       name: t.name,
       x,
@@ -345,6 +360,25 @@ export class Game {
       spent: t.cost,
       spotRef: null
     };
+
+    if (type === "lamp" && effect.lampRangeBonus) {
+      tower.range += effect.lampRangeBonus;
+    }
+    if (type === "book" && effect.bookDamageMul) {
+      tower.damage = Math.round(tower.damage * effect.bookDamageMul);
+    }
+    if (type === "sniper" && effect.sniperRangeBonus) {
+      tower.range += effect.sniperRangeBonus;
+    }
+    if (type === "coffee" && effect.coffeeSlowOverride) {
+      tower.slow = effect.coffeeSlowOverride;
+      tower.slowTime += effect.coffeeSlowTimeBonus || 0;
+    }
+    if (type === "bomb" && effect.bombSplashBonus) {
+      tower.splashRadius += effect.bombSplashBonus;
+    }
+
+    return tower;
   }
 
   createEnemy(typeKey, distance = 0) {
@@ -369,8 +403,9 @@ export class Game {
       shieldHP: 0,
       maxShieldHP: 0,
       enraged: false,
-      summon75Done: false,
+      summon70Done: false,
       summon35Done: false,
+      phase2Done: false,
       didSplit: false
     };
 
@@ -380,7 +415,7 @@ export class Game {
     }
 
     if (typeKey === "boss") {
-      enemy.shieldHP = Math.round(140 * cfg.enemyHpMul);
+      enemy.shieldHP = Math.round(120 * cfg.enemyHpMul);
       enemy.maxShieldHP = enemy.shieldHP;
     }
 
@@ -444,6 +479,10 @@ export class Game {
     enemy.alive = false;
     this.gold += enemy.reward;
     this.score += enemy.reward;
+    this.stats.kills += 1;
+    if (enemy.type === "boss") {
+      this.stats.bossKills += 1;
+    }
 
     this.spawnParticles(enemy.x, enemy.y, enemy.color, enemy.type === "boss" ? 28 : 14, 150, 0.45);
     this.playTone(820, 0.04, "square", 0.012);
@@ -506,23 +545,32 @@ export class Game {
   handleBossMechanics(enemy) {
     if (enemy.type !== "boss" || !enemy.alive) return;
 
-    if (!enemy.summon75Done && enemy.hp <= enemy.maxHp * 0.75) {
-      enemy.summon75Done = true;
+    if (!enemy.summon70Done && enemy.hp <= enemy.maxHp * 0.7) {
+      enemy.summon70Done = true;
       this.spawnChildrenAt(enemy.distance, ["rush", "fast"]);
-      this.logText = "Boss 召唤了增援！";
+      this.logText = "Boss 召唤了第一波增援！";
     }
 
-    if (!enemy.enraged && enemy.hp <= enemy.maxHp * 0.5) {
+    if (!enemy.enraged && enemy.hp <= enemy.maxHp * 0.45) {
       enemy.enraged = true;
-      enemy.speed *= 1.35;
+      enemy.speed *= 1.28;
       this.logText = "Boss 进入狂暴状态！";
       this.spawnParticles(enemy.x, enemy.y, "#f97316", 18, 180, 0.4);
     }
 
-    if (!enemy.summon35Done && enemy.hp <= enemy.maxHp * 0.35) {
+    if (!enemy.phase2Done && enemy.hp <= enemy.maxHp * 0.25) {
+      enemy.phase2Done = true;
+      enemy.shieldHP = Math.max(enemy.shieldHP, Math.round(enemy.maxShieldHP * 0.9));
+      enemy.speed *= 1.12;
+      this.spawnChildrenAt(enemy.distance, ["shield", "split", "rush"]);
+      this.logText = "Boss 进入第二阶段，并展开护盾！";
+      this.spawnParticles(enemy.x, enemy.y, "#22d3ee", 24, 190, 0.45);
+    }
+
+    if (!enemy.summon35Done && enemy.hp <= enemy.maxHp * 0.12) {
       enemy.summon35Done = true;
       this.spawnChildrenAt(enemy.distance, ["elite", "rush"]);
-      this.logText = "Boss 再次召唤了增援！";
+      this.logText = "Boss 发动最后召唤！";
     }
   }
 
@@ -581,6 +629,7 @@ export class Game {
     const tower = this.createTower(this.selectedTowerType, spot.x, spot.y);
     tower.spotRef = spot;
     this.towers.push(tower);
+    this.stats.towersBuilt += 1;
     spot.tower = tower;
     this.selectedPlacedTower = tower;
 
@@ -624,7 +673,7 @@ export class Game {
       skillCdText: this.skillCooldown <= 0 ? "就绪" : `${this.skillCooldown.toFixed(1)}s`,
       score: this.score,
       mapLabel: maps[this.currentMapKey].label,
-      mapDesc: maps[this.currentMapKey].desc,
+      mapDesc: `${maps[this.currentMapKey].desc}\n${maps[this.currentMapKey].effectText || ""}`,
       logText: this.logText,
       nextWaveText: this.waveIndex + 1 >= waves.length ? "已经没有下一波了。" : `第 ${this.waveIndex + 2} 波预览：${this.countWaveComposition(waves[this.waveIndex + 1])}`,
       selectedTowerType: this.selectedTowerType,
@@ -651,7 +700,8 @@ export class Game {
       difficulty: this.currentDifficulty,
       difficultyLabel: difficulties[this.currentDifficulty].label,
       map: this.currentMapKey,
-      mapLabel: maps[this.currentMapKey].label
+      mapLabel: maps[this.currentMapKey].label,
+      stats: { ...this.stats }
     };
   }
 
@@ -922,6 +972,14 @@ export class Game {
         ctx.lineWidth = 3;
         ctx.beginPath();
         ctx.arc(enemy.x, enemy.y, enemy.radius + 8, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+
+      if (enemy.type === "boss" && enemy.phase2Done) {
+        ctx.strokeStyle = "#22d3ee";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(enemy.x, enemy.y, enemy.radius + 13, 0, Math.PI * 2);
         ctx.stroke();
       }
 
