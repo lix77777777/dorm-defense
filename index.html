@@ -120,15 +120,6 @@
         <input id="passwordInput" class="nickname-input" type="password" style="margin-top:10px;" placeholder="密码（至少 6 位）" />
       </div>
 
-      <div class="modal-actions">
-        <button class="modal-btn secondary" id="registerBtn">注册</button>
-        <button class="modal-btn secondary" id="loginBtn">登录</button>
-        <button class="modal-btn secondary" id="logoutBtn">退出登录</button>
-        <button class="modal-btn" id="startGameBtn">开始游戏</button>
-      </div>
-
-<div class="status-box" id="authStatus">未登录，请先注册或登录。</div>
-
       <div class="difficulty-row">
         <button class="difficulty-btn active" data-difficulty="easy">简单</button>
         <button class="difficulty-btn" data-difficulty="normal">普通</button>
@@ -141,11 +132,20 @@
         <button class="map-btn" data-map="lab">实验楼</button>
       </div>
 
-      <div class="modal-box" id="difficultyInfo">简单：也需要认真放塔，但容错更高。</div>
+      <div class="modal-box" id="difficultyInfo">简单：适合第一次玩，容错更高。</div>
       <div class="modal-box" id="mapSelectInfo">宿舍区：路线平衡，适合标准布局。</div>
       <div class="modal-box" id="saveSummaryBox">局外金币：0</div>
+      <div class="modal-box" id="achievementSummaryBox">成就：0 / 6</div>
 
-      
+      <div class="modal-actions">
+        <button class="modal-btn secondary" id="registerBtn">注册</button>
+        <button class="modal-btn secondary" id="loginBtn">登录</button>
+        <button class="modal-btn secondary" id="logoutBtn">退出登录</button>
+        <button class="modal-btn secondary" id="codexBtn">图鉴</button>
+        <button class="modal-btn" id="startGameBtn">开始游戏</button>
+      </div>
+
+      <div class="status-box" id="authStatus">未登录，请先注册或登录。</div>
 
       <div class="rank-tab-row">
         <button class="rank-tab active" id="globalRankTab">全球总榜</button>
@@ -154,6 +154,18 @@
 
       <div class="rank-box" id="leaderboardBox">排行榜加载中...</div>
       <div class="status-box" id="leaderboardStatus">正在连接排行榜服务...</div>
+    </div>
+  </div>
+
+  <!-- 图鉴 -->
+  <div class="overlay hidden" id="codexOverlay">
+    <div class="modal">
+      <h2>图鉴</h2>
+      <p>查看已解锁防御塔、敌人特性和地图效果。</p>
+      <div class="modal-box" id="codexContent">加载中...</div>
+      <div class="modal-actions">
+        <button class="modal-btn secondary" id="closeCodexBtn">关闭</button>
+      </div>
     </div>
   </div>
 
@@ -180,5 +192,7 @@
   </div>
 
   <script type="module" src="./main.js"></script>
+</body>
+</html>
 </body>
 </html>
