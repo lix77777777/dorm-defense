@@ -1,1 +1,319 @@
+import { difficulties, maps } from "./data.js";
+import { submitScore, fetchLeaderboard } from "./firebase.js";
+import { Game } from "./game.js";
 
+const game = new Game(document.getElementById("gameCanvas"), {
+  onUpdate: handleGameUpdate,
+  onGameEnd: handleGameEnd
+});
+
+const goldText = document.getElementById("goldText");
+const livesText = document.getElementById("livesText");
+const waveText = document.getElementById("waveText");
+const stateText = document.getElementById("stateText");
+const skillCdText = document.getElementById("skillCdText");
+const scoreText = document.getElementById("scoreText");
+const mapText = document.getElementById("mapText");
+const logBox = document.getElementById("logBox");
+const descBox = document.getElementById("descBox");
+const selectedTowerInfo = document.getElementById("selectedTowerInfo");
+const wavePreviewBox = document.getElementById("wavePreviewBox");
+const mapInfoBox = document.getElementById("mapInfoBox");
+
+const lampBtn = document.getElementById("lampBtn");
+const coffeeBtn = document.getElementById("coffeeBtn");
+const bookBtn = document.getElementById("bookBtn");
+const startWaveBtn = document.getElementById("startWaveBtn");
+const pauseBtn = document.getElementById("pauseBtn");
+const restartBtn = document.getElementById("restartBtn");
+const upgradeBtn = document.getElementById("upgradeBtn");
+const sellBtn = document.getElementById("sellBtn");
+const skillBtn = document.getElementById("skillBtn");
+const soundBtn = document.getElementById("soundBtn");
+
+const startOverlay = document.getElementById("startOverlay");
+const resultOverlay = document.getElementById("resultOverlay");
+const startGameBtn = document.getElementById("startGameBtn");
+const playAgainBtn = document.getElementById("playAgainBtn");
+const backTitleBtn = document.getElementById("backTitleBtn");
+
+const difficultyInfo = document.getElementById("difficultyInfo");
+const mapSelectInfo = document.getElementById("mapSelectInfo");
+const difficultyButtons = [...document.querySelectorAll(".difficulty-btn")];
+const mapButtons = [...document.querySelectorAll(".map-btn")];
+const nicknameInput = document.getElementById("nicknameInput");
+
+const leaderboardBox = document.getElementById("leaderboardBox");
+const leaderboardStatus = document.getElementById("leaderboardStatus");
+const resultLeaderboardBox = document.getElementById("resultLeaderboardBox");
+const resultLeaderboardStatus = document.getElementById("resultLeaderboardStatus");
+
+const globalRankTab = document.getElementById("globalRankTab");
+const difficultyRankTab = document.getElementById("difficultyRankTab");
+const resultGlobalRankTab = document.getElementById("resultGlobalRankTab");
+const resultDifficultyRankTab = document.getElementById("resultDifficultyRankTab");
+
+const resultTitle = document.getElementById("resultTitle");
+const resultSubtitle = document.getElementById("resultSubtitle");
+const resultBox = document.getElementById("resultBox");
+
+let currentDifficulty = "easy";
+let currentMap = "dorm";
+
+let playerNickname = "";
+let leaderboardCache = [];
+let lastSubmittedDocId = null;
+let rankMode = "global";
+let resultRankMode = "global";
+let scoreSubmitted = false;
+let lastResult = null;
+
+function escapeHTML(str) {
+  return String(str)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;");
+}
+
+function setDifficulty(diff) {
+  currentDifficulty = diff;
+  difficultyButtons.forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.difficulty === diff);
+  });
+  difficultyInfo.textContent = difficulties[diff].desc;
+  game.setDifficulty(diff);
+  renderLeaderboards();
+}
+
+function setMap(mapKey) {
+  currentMap = mapKey;
+  mapButtons.forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.map === mapKey);
+  });
+  mapSelectInfo.textContent = maps[mapKey].desc;
+  game.setMap(mapKey);
+}
+
+function setTowerButtonActive(type) {
+  lampBtn.classList.toggle("active", type === "lamp");
+  coffeeBtn.classList.toggle("active", type === "coffee");
+  bookBtn.classList.toggle("active", type === "book");
+}
+
+function handleGameUpdate(ui) {
+  goldText.textContent = ui.gold;
+  livesText.textContent = ui.lives;
+  waveText.textContent = ui.waveText;
+  stateText.textContent = ui.stateText;
+  skillCdText.textContent = ui.skillCdText;
+  scoreText.textContent = ui.score;
+  mapText.textContent = ui.mapLabel;
+  logBox.textContent = ui.logText;
+  wavePreviewBox.textContent = ui.nextWaveText;
+  selectedTowerInfo.textContent = ui.selectedTowerInfoText;
+  mapInfoBox.textContent = ui.mapDesc;
+
+  startWaveBtn.disabled = ui.startWaveDisabled;
+  pauseBtn.disabled = ui.pauseDisabled;
+  pauseBtn.textContent = ui.pauseText;
+  skillBtn.disabled = ui.skillDisabled;
+  upgradeBtn.disabled = !ui.canUpgrade;
+  sellBtn.disabled = !ui.canSell;
+
+  soundBtn.textContent = ui.soundEnabled ? "音效：开启" : "音效：关闭";
+  soundBtn.classList.toggle("sound-on", ui.soundEnabled);
+  soundBtn.classList.toggle("sound-off", !ui.soundEnabled);
+
+  setTowerButtonActive(ui.selectedTowerType);
+}
+
+function validateNickname(name) {
+  const trimmed = name.trim();
+  return trimmed.length >= 1 && trimmed.length <= 20;
+}
+
+async function handleGameEnd(result) {
+  lastResult = result;
+
+  resultTitle.textContent = result.victory ? "胜利！" : "失败！";
+  resultSubtitle.textContent = result.victory ? "你成功守住了终点。" : "防线被突破了。";
+  resultBox.textContent =
+`玩家：${playerNickname}
+难度：${result.difficultyLabel}
+地图：${result.mapLabel}
+最终波次：${result.wave} / ${result.totalWaves}
+剩余基地血量：${result.lives}
+剩余金币：${result.gold}
+已放置防御塔：${result.towersCount}
+本局分数：${result.score}
+
+${result.victory ? "干得漂亮，你守住了最后一波。" : "别灰心，调整塔的位置和升级顺序再试一次。"}`;
+
+  resultOverlay.classList.remove("hidden");
+
+  if (!scoreSubmitted && result.score > 0 && validateNickname(playerNickname)) {
+    scoreSubmitted = true;
+    resultLeaderboardStatus.textContent = "正在提交分数...";
+    try {
+      lastSubmittedDocId = await submitScore({
+        nickname: playerNickname,
+        score: result.score,
+        wave: result.wave,
+        difficulty: result.difficulty,
+        map: result.map
+      });
+      resultLeaderboardStatus.textContent = "成绩已提交到全球排行榜。";
+    } catch (err) {
+      console.error(err);
+      resultLeaderboardStatus.textContent = "成绩提交失败，请检查 Firestore 规则或网络。";
+    }
+  }
+
+  await refreshLeaderboards();
+}
+
+function sortLeaderboard(list) {
+  return [...list].sort((a, b) => {
+    if (b.score !== a.score) return b.score - a.score;
+    if ((b.wave || 0) !== (a.wave || 0)) return (b.wave || 0) - (a.wave || 0);
+    return (a.createdAt || 0) - (b.createdAt || 0);
+  });
+}
+
+function renderLeaderboardTo(container, mode) {
+  let list = sortLeaderboard(leaderboardCache);
+
+  if (mode === "difficulty") {
+    list = list.filter(item => item.difficulty === currentDifficulty);
+  }
+
+  list = list.slice(0, 20);
+
+  if (!list.length) {
+    container.innerHTML = "暂无记录。";
+    return;
+  }
+
+  container.innerHTML = list.map((item, idx) => `
+    <div class="rank-item ${item.id === lastSubmittedDocId ? "self" : ""}">
+      <div class="rank-index">#${idx + 1}</div>
+      <div>
+        <div class="rank-name">${escapeHTML(item.nickname)}${item.id === lastSubmittedDocId ? "（你）" : ""}</div>
+        <div class="rank-meta">${difficulties[item.difficulty]?.label || item.difficulty} · ${maps[item.map]?.label || item.map || "未知地图"} · 波次 ${item.wave || 0}</div>
+      </div>
+      <div class="rank-score">${item.score || 0}</div>
+    </div>
+  `).join("");
+}
+
+function renderLeaderboards() {
+  renderLeaderboardTo(leaderboardBox, rankMode);
+  renderLeaderboardTo(resultLeaderboardBox, resultRankMode);
+}
+
+async function refreshLeaderboards() {
+  leaderboardStatus.textContent = "正在刷新排行榜...";
+  resultLeaderboardStatus.textContent = resultLeaderboardStatus.textContent || "正在刷新排行榜...";
+
+  try {
+    leaderboardCache = await fetchLeaderboard(100);
+    renderLeaderboards();
+    leaderboardStatus.textContent = "全球排行榜已更新。";
+    if (!lastResult) {
+      resultLeaderboardStatus.textContent = "排行榜已更新。";
+    } else if (lastSubmittedDocId) {
+      resultLeaderboardStatus.textContent = "成绩已同步，排行榜已更新。";
+    } else {
+      resultLeaderboardStatus.textContent = "排行榜已更新。";
+    }
+  } catch (err) {
+    console.error(err);
+    leaderboardBox.innerHTML = "排行榜读取失败。";
+    resultLeaderboardBox.innerHTML = "排行榜读取失败。";
+    leaderboardStatus.textContent = "请检查 Firestore 规则、网络，或确认已用 GitHub Pages 打开。";
+    resultLeaderboardStatus.textContent = "排行榜读取失败。";
+  }
+}
+
+function setRankMode(mode) {
+  rankMode = mode;
+  globalRankTab.classList.toggle("active", mode === "global");
+  difficultyRankTab.classList.toggle("active", mode === "difficulty");
+  renderLeaderboards();
+}
+
+function setResultRankMode(mode) {
+  resultRankMode = mode;
+  resultGlobalRankTab.classList.toggle("active", mode === "global");
+  resultDifficultyRankTab.classList.toggle("active", mode === "difficulty");
+  renderLeaderboards();
+}
+
+lampBtn.addEventListener("click", () => game.setSelectedTowerType("lamp"));
+coffeeBtn.addEventListener("click", () => game.setSelectedTowerType("coffee"));
+bookBtn.addEventListener("click", () => game.setSelectedTowerType("book"));
+
+startWaveBtn.addEventListener("click", () => game.startNextWave());
+pauseBtn.addEventListener("click", () => game.togglePause());
+restartBtn.addEventListener("click", () => {
+  scoreSubmitted = false;
+  lastSubmittedDocId = null;
+  lastResult = null;
+  game.restartGame();
+});
+upgradeBtn.addEventListener("click", () => game.upgradeSelectedTower());
+sellBtn.addEventListener("click", () => game.sellSelectedTower());
+skillBtn.addEventListener("click", () => game.castSkill());
+soundBtn.addEventListener("click", () => game.toggleSound());
+
+difficultyButtons.forEach(btn => {
+  btn.addEventListener("click", () => setDifficulty(btn.dataset.difficulty));
+});
+
+mapButtons.forEach(btn => {
+  btn.addEventListener("click", () => setMap(btn.dataset.map));
+});
+
+globalRankTab.addEventListener("click", () => setRankMode("global"));
+difficultyRankTab.addEventListener("click", () => setRankMode("difficulty"));
+resultGlobalRankTab.addEventListener("click", () => setResultRankMode("global"));
+resultDifficultyRankTab.addEventListener("click", () => setResultRankMode("difficulty"));
+
+startGameBtn.addEventListener("click", () => {
+  const name = nicknameInput.value.trim();
+  if (!validateNickname(name)) {
+    leaderboardStatus.textContent = "请输入 1 到 20 个字符的昵称。";
+    return;
+  }
+
+  playerNickname = name;
+  scoreSubmitted = false;
+  lastSubmittedDocId = null;
+  lastResult = null;
+
+  startOverlay.classList.add("hidden");
+  resultOverlay.classList.add("hidden");
+  game.startNewGame();
+});
+
+playAgainBtn.addEventListener("click", () => {
+  scoreSubmitted = false;
+  lastSubmittedDocId = null;
+  lastResult = null;
+  resultOverlay.classList.add("hidden");
+  game.startNewGame();
+});
+
+backTitleBtn.addEventListener("click", async () => {
+  resultOverlay.classList.add("hidden");
+  startOverlay.classList.remove("hidden");
+  lastResult = null;
+  scoreSubmitted = false;
+  await refreshLeaderboards();
+});
+
+setDifficulty("easy");
+setMap("dorm");
+setRankMode("global");
+setResultRankMode("global");
+refreshLeaderboards();
