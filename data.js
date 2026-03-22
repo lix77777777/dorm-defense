@@ -38,6 +38,11 @@ export const maps = {
   dorm: {
     label: "宿舍区",
     desc: "宿舍区：路线平衡，适合标准布局。",
+    effectText: "地图效果：初始金币 +20，台灯塔射程 +10。",
+    effect: {
+      startGoldBonus: 20,
+      lampRangeBonus: 10
+    },
     path: [
       { x: 0, y: 100 },
       { x: 180, y: 100 },
@@ -65,6 +70,11 @@ export const maps = {
   library: {
     label: "图书馆",
     desc: "图书馆：路线更长，后半段更适合高伤害塔。",
+    effectText: "地图效果：书本塔伤害 +18%，狙击塔射程 +24。",
+    effect: {
+      bookDamageMul: 1.18,
+      sniperRangeBonus: 24
+    },
     path: [
       { x: 0, y: 80 },
       { x: 230, y: 80 },
@@ -94,6 +104,12 @@ export const maps = {
   lab: {
     label: "实验楼",
     desc: "实验楼：转角多，减速塔和交叉火力更重要。",
+    effectText: "地图效果：咖啡塔减速更强，范围塔爆炸范围 +14。",
+    effect: {
+      coffeeSlowOverride: 0.45,
+      coffeeSlowTimeBonus: 0.5,
+      bombSplashBonus: 14
+    },
     path: [
       { x: 0, y: 260 },
       { x: 180, y: 260 },
@@ -212,7 +228,8 @@ export const enemyTypes = {
     reward: 20,
     color: "#3b82f6",
     radius: 14,
-    label: "拖"
+    label: "拖",
+    desc: "基础敌人，数量多。"
   },
   fast: {
     name: "熬夜怪",
@@ -221,7 +238,8 @@ export const enemyTypes = {
     reward: 18,
     color: "#f59e0b",
     radius: 12,
-    label: "夜"
+    label: "夜",
+    desc: "跑得快，适合偷家。"
   },
   tank: {
     name: "截止日怪",
@@ -230,7 +248,8 @@ export const enemyTypes = {
     reward: 34,
     color: "#ef4444",
     radius: 17,
-    label: "截"
+    label: "截",
+    desc: "血厚但速度慢。"
   },
   rush: {
     name: "冲刺怪",
@@ -239,7 +258,8 @@ export const enemyTypes = {
     reward: 16,
     color: "#8b5cf6",
     radius: 10,
-    label: "冲"
+    label: "冲",
+    desc: "超高速敌人，后期很危险。"
   },
   elite: {
     name: "精英怪",
@@ -248,7 +268,8 @@ export const enemyTypes = {
     reward: 46,
     color: "#111827",
     radius: 18,
-    label: "精"
+    label: "精",
+    desc: "高血量综合型怪物。"
   },
   shield: {
     name: "护盾怪",
@@ -257,7 +278,8 @@ export const enemyTypes = {
     reward: 24,
     color: "#0891b2",
     radius: 14,
-    label: "盾"
+    label: "盾",
+    desc: "自带护盾，先打掉护盾再掉血。"
   },
   split: {
     name: "分裂怪",
@@ -266,7 +288,8 @@ export const enemyTypes = {
     reward: 26,
     color: "#db2777",
     radius: 14,
-    label: "裂"
+    label: "裂",
+    desc: "死亡后会分裂成两个冲刺怪。"
   },
   boss: {
     name: "院长怪",
@@ -275,7 +298,8 @@ export const enemyTypes = {
     reward: 110,
     color: "#7c2d12",
     radius: 24,
-    label: "王"
+    label: "王",
+    desc: "Boss：多阶段、会召唤并进入狂暴。"
   }
 };
 
